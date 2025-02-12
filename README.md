@@ -4,9 +4,9 @@
 Request to be in IF89 project
 
 Job script:
-'''
+```
 qsub fshd1_prototype.pbs.sh
-'''
+```
 
 # Available default input file
 1. d4z4_region.chm13.bed
