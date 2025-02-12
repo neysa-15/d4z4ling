@@ -75,10 +75,9 @@ def add_bed_info_to_results(results_df, bed_df):
             return bed_entry.iloc[0][column]
         return "NA"
 
-    results_df["GenomeCoords"] = results_df.apply(get_bed_info, axis=1, column="GenomeCoords")
-    results_df["AlignmentLength"] = results_df.apply(get_bed_info, axis=1, column="AlignmentLength")
-    results_df["strand"] = results_df.apply(get_bed_info, axis=1, column="strand")
-    results_df["MAPQ"] = results_df.apply(get_bed_info, axis=1, column="MAPQ")
+    for column in ["GenomeCoords", "AlignmentLength", "strand", "MAPQ"]:
+        results_df[column] = results_df.apply(get_bed_info, axis=1, column=column)
+
     return results_df
 
 def calculate_estimated_copies(row):
@@ -88,16 +87,8 @@ def calculate_estimated_copies(row):
     """
     try:
         # Ensure valid coordinates before splitting
-        if row["pLAM_coords"] and row["pLAM_coords"] != "NA":
-            pLAM_start, pLAM_end = map(int, row["pLAM_coords"].split("-"))
-        else:
-            pLAM_start, pLAM_end = None, None
-
-        if row["p13-E11_coords"] and row["p13-E11_coords"] != "NA":
-            p13_start, p13_end = map(int, row["p13-E11_coords"].split("-"))
-        else:
-            p13_start, p13_end = None, None
-
+        pLAM_start, pLAM_end = map(int, row["pLAM_coords"].split("-")) if row["pLAM_coords"] and row["pLAM_coords"] != "NA" else (None, None)
+        p13_start, p13_end = map(int, row["p13-E11_coords"].split("-")) if row["p13-E11_coords"] and row["p13-E11_coords"] != "NA" else (None, None)
         read_length = int(row["ReadLength"]) if row["ReadLength"] != "NA" else None
 
         # Skip calculation for specific ReadLabels
@@ -214,8 +205,8 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
     Returns:
         None
     """
- 
-    sequences_dict, lengths_dict = load_fasta_to_dict(fasta_file)
+    sequences_dict, lengths_dict = load_fasta_to_dict(fasta_file) if fasta_file else ({}, {})
+    # sequences_dict, lengths_dict = load_fasta_to_dict(fasta_file)
 
     # Column names for PSL format
     psl_columns = [
@@ -234,8 +225,8 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
         "q_gap_bases", "t_gap_count", "t_gap_bases", "q_size", "q_start",
         "q_end", "t_size", "t_start", "t_end"
     ]
-    for col in numeric_columns:
-        psl_df[col] = pd.to_numeric(psl_df[col], errors="coerce")
+
+    psl_df[numeric_columns] = psl_df[numeric_columns].apply(pd.to_numeric, errors="coerce")
 
     # List of features to check
     features = ["d4z4_chr4_proximal", "p13-E11", "pLAM","4qA_probe","4qB_probe"]
@@ -270,14 +261,10 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
             results[read_name]["4qB_probe_percent_identity"] = "NA"
 
         # Populate details for the current feature
-        if feature_name in features:
-            # Skip this alignment if completeness is below the threshold
-            COMPLETENESS_THRESHOLD = 10
-            if completeness < COMPLETENESS_THRESHOLD:
-                continue
-            # Check if the feature is already filled; if so, skip to avoid overwriting
-            if results[read_name][f"{feature_name}_mapped"]:
-                continue
+        # if feature_name in features AND
+        # Skip this alignment if completeness is below the threshold AND
+        # Check if the feature is already filled; if so, skip to avoid overwriting
+        if feature_name in features and completeness >= 10 and not results[read_name][f"{feature_name}_mapped"]:
             results[read_name][f"{feature_name}_mapped"] = True
             results[read_name][f"{feature_name}_coords"] = f"{t_start}-{t_end}"
             results[read_name][f"{feature_name}_score"] = alignment_score
@@ -290,10 +277,7 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
                     #print(read_name)
                     #print(sequence)
                     polyA_coords, polyA_signal = find_polyA_coords_and_signal(sequence, t_start, t_end)
-                    if polyA_signal in ["ATTAAA", "TTTAAT"]:
-                        results[read_name]["pLAM_contains_polyA"] = True
-                    else:
-                        results[read_name]["pLAM_contains_polyA"] = False
+                    results[read_name]["pLAM_contains_polyA"] = polyA_signal in ["ATTAAA", "TTTAAT"]
                     results[read_name]["pLAM_polyA_coords"] = polyA_coords
                     results[read_name]["pLAM_polyA_signal"] = polyA_signal
                 else:
@@ -309,17 +293,15 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
                 percent_identity = (matches / (matches + mismatches + rep_matches)) * 100
 
                 # Add to results dictionary
-                if read_name not in results:
-                    results[read_name] = {}
                 results[read_name][f"{feature_name}_percent_identity"] = round(percent_identity, 2)
-
+              
     # Ensure all BED reads are in results
     bed_df = read_bed_file(bed_file)
     results = ensure_all_reads_in_results(results, bed_df, features, lengths_dict)
 
     # Convert results dictionary to a DataFrame
-    results_df = pd.DataFrame.from_dict(results, orient="index").reset_index()
-    results_df.rename(columns={"index": "ReadID"}, inplace=True)
+    results_df = pd.DataFrame.from_dict(results, orient="index").reset_index().rename(columns={"index": "ReadID"})
+    results_df = add_bed_info_to_results(results_df, bed_df)
 
     def assign_read_label_and_haplotype(row):
         p13_mapped = row["p13-E11_mapped"]
@@ -355,10 +337,6 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
         else:
             return "no_features", "NA"
 
-
-    # Add GenomeCoords, strand, and MAPQ to results DataFrame
-    results_df = add_bed_info_to_results(results_df, bed_df)
-
     # Apply the updated function to assign both ReadLabel and Haplotype
     results_df[["ReadLabel", "Haplotype"]] = results_df.apply(
         lambda row: pd.Series(assign_read_label_and_haplotype(row)), axis=1
@@ -367,10 +345,7 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
     results_df["EstimatedCopies"] = results_df.apply(calculate_estimated_copies, axis=1)
 
     # Parse the SSLP BED file if provided
-    sslp_data = {}
-    if sslp_file:
-        print(f"Parsing SSLP BED file: {sslp_file}")
-        sslp_data = parse_sslp_bed(sslp_file)
+    sslp_data = parse_sslp_bed(sslp_file) if sslp_file else {}
 
     # Add SSLP_coords and SSLP_length columns
     if sslp_data:
@@ -390,13 +365,7 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
         if feature in ["4qA_probe", "4qB_probe"]:
             columns.append(f"{feature}_percent_identity")
     columns.extend(["pLAM_contains_polyA", "pLAM_polyA_coords", "pLAM_polyA_signal","SSLP_coords","SSLP_length","EstimatedCopies"])
-    results_df = results_df[columns]
-
-    # Replace empty values with NA
-    results_df.fillna("NA", inplace=True)
-
-    # Exclude rows with NA in the ReadLabel column
-    results_df["ReadLabel"].fillna("NA", inplace=True)
+    results_df = results_df[columns].fillna("NA")
 
     # Add a temporary column for custom chromosome sorting
     results_df["ChromosomeOrder"] = results_df["GenomeCoords"].apply(lambda x: 0 if x.startswith("chr4") else 1 if x.startswith("chr10") else 2)
@@ -420,11 +389,8 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
         ordered=True
     )
 
-    # Sort rows by ReadLabel and Haplotype
-    results_df = results_df.sort_values(by=["ChromosomeOrder","ReadLabel", "Haplotype"])
- 
-    # Drop the temporary sorting column
-    results_df = results_df.drop(columns=["ChromosomeOrder"])
+    # Sort rows by ReadLabel and Haplotype and drop the temporary sorting column
+    results_df = results_df.sort_values(by=["ChromosomeOrder", "ReadLabel", "Haplotype"]).drop(columns=["ChromosomeOrder"])
 
     # Save to TSV
     results_df.to_csv(output_table, index=False, sep="\t")
