@@ -14,7 +14,7 @@ args = parser.parse_args()
 # Paths
 OUTDIR = os.path.abspath(args.outdir)
 PREFIX = args.prefix
-merged_bam_path = f"{OUTDIR}/merged.bam"
+merged_bam_path = f"{OUTDIR}/{PREFIX}_aligned_haplotypes.bam"
 input_summary_path = f"{OUTDIR}/{PREFIX}_mapped_features_summary.tsv"
 output_summary_path = f"{OUTDIR}/{PREFIX}_updated_features_summary.tsv"
 
@@ -28,9 +28,10 @@ repeat_regions = {
 
 # Function to determine haplotype
 def get_haplotype(chrom):
-    if chrom == "chr4":
+    print(chrom)
+    if "chr4" in chrom:
         return "4A"
-    elif chrom == "chr10":
+    elif "chr10" in chrom:
         return "10A"
     return "NA"
 
@@ -69,6 +70,8 @@ df_results = pd.DataFrame(results, columns=["ReadID", "MappedEstimatedCopies", "
 
 # Merge with original summary file
 df_final = pd.merge(df, df_results, on="ReadID", how="left")
+
+print(df_final)
 
 # Save output
 df_final.to_csv(input_summary_path, sep="\t", index=False)
