@@ -2,23 +2,21 @@ import pysam
 import pandas as pd
 import multiprocessing
 import os
+import subprocess
 import argparse
 
 parser = argparse.ArgumentParser(description="Calculate mapped estimated copies")
-parser.add_argument("--outdir", required=True, help="output directory")
-parser.add_argument("--prefix", required=True, help="sample prefix")
+parser.add_argument("--outdir", required=True, help="Output directory")
+parser.add_argument("--prefix", required=True, help="Sample prefix")
 
-# Parse arguments
 args = parser.parse_args()
 
-# Paths
 OUTDIR = os.path.abspath(args.outdir)
 PREFIX = args.prefix
 merged_bam_path = f"{OUTDIR}/{PREFIX}_aligned_haplotypes.bam"
 input_summary_path = f"{OUTDIR}/{PREFIX}_mapped_features_summary.tsv"
 output_summary_path = f"{OUTDIR}/{PREFIX}_updated_features_summary.tsv"
 
-# Haplotype regions
 repeat_regions = {
     "4A": "HM190196.1_dux4_4A166:1-3199",
     "4B": "HM190164.1_dux4_4B168:1-3121",
@@ -26,16 +24,46 @@ repeat_regions = {
     "10B": "HM190165.1_dux4_10B161T:1-3125"
 }
 
-# Function to determine haplotype
 def get_haplotype(chrom):
-    print(chrom)
     if "chr4" in chrom:
         return "4A"
     elif "chr10" in chrom:
         return "10A"
     return "NA"
 
-# Function to estimate number of copies
+def compute_depth(region, bam_file, read_id, strand_flag):
+    temp_bam_path = f"{OUTDIR}/{read_id}_{os.getpid()}_temp.bam"
+    read_id_file = f"{OUTDIR}/{read_id}.txt"
+
+    # Write Read ID to file
+    with open(read_id_file, "w") as f:
+        f.write(read_id + "\n")
+
+    # Run samtools view with -N (file input)
+    cmd = f"samtools view -N {read_id_file} -h -b {bam_file} {strand_flag} -o {temp_bam_path}"
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+
+    # Remove temp read ID file
+    os.remove(read_id_file)
+
+    if result.returncode != 0:
+        print(f"Error creating {temp_bam_path}: {result.stderr}")
+        return 0
+
+    # Index and calculate depth
+    index_cmd = f"samtools index {temp_bam_path}"
+    subprocess.run(index_cmd, shell=True, capture_output=True, text=True)
+
+    depth_cmd = f"samtools depth -r {region} {temp_bam_path}"
+    output = subprocess.run(depth_cmd, shell=True, capture_output=True, text=True).stdout.strip().split("\n")
+
+    os.remove(temp_bam_path)
+    os.remove(f"{temp_bam_path}.bai")
+
+    depths = [int(line.split("\t")[2]) for line in output if len(line.split("\t")) == 3]
+    return round(sum(depths) / len(depths), 2) if depths else 0
+
+
 def estimate_copies(read_id, chrom):
     haplotype = get_haplotype(chrom)
     if haplotype == "NA":
@@ -45,24 +73,18 @@ def estimate_copies(read_id, chrom):
     if repeat_region == "NA":
         return read_id, "NA", "NA", "NA"
 
-    with pysam.AlignmentFile(merged_bam_path, "rb") as bam:
-        # Filter reads for given ReadID
-        reads_plus = [read for read in bam.fetch() if read.query_name == read_id and not read.is_reverse]
-        reads_minus = [read for read in bam.fetch() if read.query_name == read_id and read.is_reverse]
-
-    # Calculate coverage using pysam.depth
-    number_copies_plus = sum(r.query_length for r in reads_plus) / len(reads_plus) if reads_plus else 0
-    number_copies_minus = sum(r.query_length for r in reads_minus) / len(reads_minus) if reads_minus else 0
+    number_copies_plus = compute_depth(repeat_region, merged_bam_path, read_id, "-F 16")
+    number_copies_minus = compute_depth(repeat_region, merged_bam_path, read_id, "-f 16")
     number_copies = max(number_copies_plus, number_copies_minus)
 
     return read_id, number_copies, number_copies_plus, number_copies_minus
 
 # Read input data
 df = pd.read_csv(input_summary_path, sep="\t")
-df_filtered = df[df.columns[:2]]  # Keep only ReadID and Chromosome columns
+df_filtered = df[df.columns[:2]]
 
 # Run in parallel
-with multiprocessing.Pool(processes=4) as pool:
+with multiprocessing.Pool(processes=56) as pool:
     results = pool.starmap(estimate_copies, df_filtered.values)
 
 # Convert results to DataFrame
@@ -71,7 +93,7 @@ df_results = pd.DataFrame(results, columns=["ReadID", "MappedEstimatedCopies", "
 # Merge with original summary file
 df_final = pd.merge(df, df_results, on="ReadID", how="left")
 
-print(df_final)
-
 # Save output
-df_final.to_csv(input_summary_path, sep="\t", index=False)
+df_final.to_csv(output_summary_path, sep="\t", index=False)
+
+print("Processing complete. Output saved to", output_summary_path)
