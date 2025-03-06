@@ -3,3 +3,5 @@
 2. Current duplex check are only for the reads that have features, not if there's only repeats
 
 3. 4A161L detection script are sometimes mapping better to repeats that's not the distal copy
+
+4. Current distal methylation method are only checking for d4z4 that overlap with pLAM, not any known distal copies
