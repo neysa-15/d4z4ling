@@ -3,6 +3,7 @@
    - "ca43959f-8cdd-466b-97e8-c76aede61765": Duplex read to check with odd positioning of D4Z4 repeats
    AS2603
    - "c95c3baa-460b-4c09-a80c-4e2a229603d0": has a very short D4z4_chr4_proximal that is the opposite strand of everything else
+   - "37b3da42-79a6-4022-9139-ce8e5efa28ca": another duplex with weird position
 
 2. Current duplex check are only for the reads that have features, not if there's only repeats
 
