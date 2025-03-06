@@ -94,6 +94,6 @@ df_results = pd.DataFrame(results, columns=["ReadID", "MappedEstimatedCopies", "
 df_final = pd.merge(df, df_results, on="ReadID", how="left")
 
 # Save output
-df_final.to_csv(output_summary_path, sep="\t", index=False)
+df_final.to_csv(input_summary_path, sep="\t", index=False)
 
-print("Processing complete. Output saved to", output_summary_path)
+print("Processing complete. Output saved to", input_summary_path)
