@@ -1,0 +1,5 @@
+1. Duplex read to check with odd positioning of D4Z4 repeats: "ca43959f-8cdd-466b-97e8-c76aede61765"
+
+2. Current duplex check are only for the reads that have features, not if there's only repeats
+
+3. 4A161L detection script are sometimes mapping better to repeats that's not the distal copy
