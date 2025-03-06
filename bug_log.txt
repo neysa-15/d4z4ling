@@ -3,7 +3,9 @@
    - "ca43959f-8cdd-466b-97e8-c76aede61765": Duplex read to check with odd positioning of D4Z4 repeats
    AS2603
    - "c95c3baa-460b-4c09-a80c-4e2a229603d0": has a very short D4z4_chr4_proximal that is the opposite strand of everything else
-   - "37b3da42-79a6-4022-9139-ce8e5efa28ca": another duplex with weird position
+   - "37b3da42-79a6-4022-9139-ce8e5efa28ca": another duplex with weird position  
+   - "a8a394f9-d6d1-4ed4-bd57-4dba11a67592": another duplex with weird position of repeats
+   - "2bcd44d2-ba99-45f5-81f6-72bd25bd1035": "-" has SSLP but "+" doesn't? And duplex optimal should take in "-" instead
 
 2. Current duplex check are only for the reads that have features, not if there's only repeats
 
