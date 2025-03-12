@@ -30,7 +30,9 @@ def count_sensitive_repeats(d4z4_table):
         if row["BlnI_Sites"] != "NA":
             blni_sensitive_counts[read_id] = blni_sensitive_counts.get(read_id, 0) + 1
 
-    return xapi_sensitive_counts, blni_sensitive_counts
+    # xapi_ratio = round(xapi_sensitive_counts.get(read_id, 0) / (xapi_sensitive_counts.get(read_id, 0) + blni_sensitive_counts.get(read_id, 0)), 2)
+
+    return xapi_sensitive_counts, blni_sensitive_counts #, xapi_ratio, (100 - xapi_ratio)
 
 def update_main_tsv(main_tsv, xapi_counts, blni_counts):
     """
@@ -44,6 +46,14 @@ def update_main_tsv(main_tsv, xapi_counts, blni_counts):
             read_id = row["ReadID"]
             row["XapI_Sensitive_Repeats"] = xapi_counts.get(read_id, 0)
             row["BlnI_Sensitive_Repeats"] = blni_counts.get(read_id, 0)
+
+            # Get ratio
+            if (row["XapI_Sensitive_Repeats"] == 0) and (row["BlnI_Sensitive_Repeats"] == 0):
+                row["XapI_RE_Ratio"] = 0
+                row["BlnI_RE_Ratio"] = 0
+            else:
+                row["XapI_RE_Ratio"] = round((row["XapI_Sensitive_Repeats"] / (row["XapI_Sensitive_Repeats"] + row["BlnI_Sensitive_Repeats"])) * 100, 2)
+                row["BlnI_RE_Ratio"] = 100 - row["XapI_RE_Ratio"]
             updated_data.append(row)
 
     # Add new columns to the header
@@ -51,6 +61,10 @@ def update_main_tsv(main_tsv, xapi_counts, blni_counts):
         header.append("XapI_Sensitive_Repeats")
     if "BlnI_Sensitive_Repeats" not in header:
         header.append("BlnI_Sensitive_Repeats")
+    if "XapI_RE_Ratio_(%)" not in header:
+        header.append("XapI_RE_Ratio_(%)")
+    if "BlnI_RE_Ratio_(%)" not in header:
+        header.append("BlnI_RE_Ratio_(%)")
 
     # Write the updated table
     with open(main_tsv, "w") as file:
@@ -58,75 +72,83 @@ def update_main_tsv(main_tsv, xapi_counts, blni_counts):
         for row in updated_data:
             file.write("\t".join(str(row.get(col, "")) for col in header) + "\n")
 
-def refine_read_label(main_tsv):
-    """
-    Refine the ReadLabel in the main TSV file.
-    If ReadLabel is 'no_features', calculate the expected read length based on MappedEstimatedCopies.
-    Reclassify as 'Partial internal Unclassified' or 'Partial distal Unclassified'.
-    """
-    updated_data = []
+# def refine_read_label(main_tsv):
+#     """
+#     Refine the ReadLabel in the main TSV file.
+#     If ReadLabel is 'no_features', calculate the expected read length based on MappedEstimatedCopies.
+#     Reclassify as 'Partial internal Unclassified' or 'Partial distal Unclassified'.
+#     """
+#     updated_data = []
 
-    with open(main_tsv, "r") as file:
-        # Read the header and rows
-        header = file.readline().strip().split("\t")
-        rows = [dict(zip(header, line.strip().split("\t"))) for line in file]
+#     with open(main_tsv, "r") as file:
+#         # Read the header and rows
+#         header = file.readline().strip().split("\t")
+#         rows = [dict(zip(header, line.strip().split("\t"))) for line in file]
 
-    for row in rows:
-        # Skip rows where ReadLabel is not 'no_features'
-        if row["ReadLabel"] != "no_features":
-            updated_data.append(row)
-            continue
+#     for row in rows:
+#         # Skip rows where ReadLabel is not 'no_features'
+#         if row["ReadLabel"] != "no_features":
+#             updated_data.append(row)
+#             continue
 
-        try:
-            # Calculate expected read length based on MappedEstimatedCopies
-            mapped_estimated_copies = float(row.get("MappedEstimatedCopies", 0))  # Default to 0 if missing
-            expected_length_kb = mapped_estimated_copies * 3.3  # Convert to kb by multiplying by 3.3
-            actual_length_kb = float(row.get("ReadLength", 0)) / 1000  # Convert ReadLength to kb
+#         try:
+#             # Calculate expected read length based on MappedEstimatedCopies
+#             mapped_estimated_copies = float(row.get("MappedEstimatedCopies", 0))  # Default to 0 if missing
+#             expected_length_kb = mapped_estimated_copies * 3.3  # Convert to kb by multiplying by 3.3
+#             actual_length_kb = float(row.get("ReadLength", 0)) / 1000  # Convert ReadLength to kb
 
-            # Compare expected length with actual length (+/- 3.3)
-            if actual_length_kb - 3.3 <= expected_length_kb <= actual_length_kb + 3.3:
-                row["ReadLabel"] = "Partial internal Unclassified"
-            else:
-                row["ReadLabel"] = "Partial distal Unclassified"
+#             # Compare expected length with actual length (+/- 3.3)
+#             if actual_length_kb - 3.3 <= expected_length_kb <= actual_length_kb + 3.3:
+#                 row["ReadLabel"] = "Partial internal Unclassified"
+#             else:
+#                 print("NOT INTERNAL")
+#                 # ADD if it's partial distal unclassified, if GenomeCoords starts with chr4 then 4qB or chr10 then 10qB
+#                 if row["GenomeCoords"].startswith("chr4"):
+#                     row["ReadLabel"] = "Partial distal 4qB"
+#                     row["Haplotype"] = "4qB"
+#                 elif row["GenomeCoords"].startswith("chr10"):
+#                     row["ReadLabel"] = "Partial distal 10qB"
+#                     row["Haplotype"] = "10qB"
+#                 print(row["ReadID"], row["ReadLabel"])
 
-        except ValueError as e:
-            print(f"Error processing row {row.get('ReadID', 'Unknown')}: {e}")
+#         except ValueError as e:
+#             print(f"Error processing row {row.get('ReadID', 'Unknown')}: {e}")
 
-        # Add the updated row to the list
-        updated_data.append(row)
+#         # Add the updated row to the list
+#         updated_data.append(row)
 
-    # Convert updated data to a pandas DataFrame for sorting
-    df = pd.DataFrame(updated_data)
+#     # Convert updated data to a pandas DataFrame for sorting
+#     df = pd.DataFrame(updated_data)
 
-    # Add a temporary column for custom chromosome sorting
-    df["ChromosomeOrder"] = df["GenomeCoords"].apply(lambda x: 0 if x.startswith("chr4") else 1 if x.startswith("chr10") else 2)
+#     # Add a temporary column for custom chromosome sorting
+#     df["ChromosomeOrder"] = df["GenomeCoords"].apply(lambda x: 0 if x.startswith("chr4") else 1 if x.startswith("chr10") else 2)
   
-    # Define the custom order for ReadLabel
-    read_label_order = [
-        "Complete 4qA",
-        "Partial distal 4qA",
-        "Complete 4qB",
-        "Partial distal 4qB",
-        "Complete 10qA",
-        "Partial distal 10qA",
-        "Partial distal Unclassified",
-        "Partial proximal Unclassified",
-        "Partial internal Unclassified"
-    ]
+#     # Define the custom order for ReadLabel
+#     read_label_order = [
+#         "Complete 4qA",
+#         "Partial distal 4qA",
+#         "Complete 4qB",
+#         "Partial distal 4qB",
+#         "Complete 10qA",
+#         "Partial distal 10qA",
+#         "Partial distal 10qB",
+#         "Partial proximal Unclassified",
+#         "Partial internal Unclassified"
+#     ]
 
-    # Convert ReadLabel to categorical with the custom order
-    df["ReadLabel"] = pd.Categorical(df["ReadLabel"], categories=read_label_order, ordered=True)
+#     # Convert ReadLabel to categorical with the custom order
+#     df["ReadLabel"] = pd.Categorical(df["ReadLabel"], categories=read_label_order, ordered=True)
 
-    # Sort rows by ReadLabel and Haplotype
-    df = df.sort_values(by=["ChromosomeOrder","ReadLabel", "Haplotype"])
+#     # Sort rows by ReadLabel and Haplotype
+#     df = df.sort_values(by=["ChromosomeOrder","ReadLabel", "Haplotype"])
 
-    # Drop the temporary sorting column
-    df = df.drop(columns=["ChromosomeOrder"])
+#     # Drop the temporary sorting column
+#     df = df.drop(columns=["ChromosomeOrder"])
 
-    # Write the sorted data back to the TSV file
-    df.to_csv(main_tsv, sep="\t", index=False)
+#     # Write the sorted data back to the TSV file
+#     df.to_csv(main_tsv, sep="\t", index=False)
 
-    print(f"ReadLabel refinement completed for {main_tsv}")
+#     print(f"ReadLabel refinement completed for {main_tsv}")
 
 
 def detect_restriction_sites(sequence):
@@ -424,5 +446,5 @@ if __name__ == "__main__":
 
     # Update the main TSV file
     update_main_tsv(args.main_tsv, xapi_counts, blni_counts)
-    refine_read_label(args.main_tsv)
+    # refine_read_label(args.main_tsv)
     print(f"Main TSV file updated with sensitive repeat counts: {args.main_tsv}")

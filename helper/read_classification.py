@@ -379,9 +379,7 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, bam_file, fa
         # Check chromosomes
         starts_with_chr4 = genome_coords.startswith("chr4")
         starts_with_chr10 = genome_coords.startswith("chr10")
-        #print(p13_mapped,pLAM_mapped,q4b_mapped)
-        #print(starts_with_chr4,starts_with_chr10)
-    
+
         # Determine label and haplotype
         if p13_mapped and pLAM_mapped and starts_with_chr4:
             return "Complete 4qA", "4qA"
@@ -391,23 +389,41 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, bam_file, fa
             return "Partial distal 4qA", "4qA"
         elif q4b_mapped and q4b_high_identity and starts_with_chr4:
             return "Partial distal 4qB", "4qB"
-        elif p13_mapped and starts_with_chr4:
+        elif p13_mapped and (starts_with_chr4 or starts_with_chr10):
             return "Partial proximal Unclassified", "NA"  # Haplotype is NA for this label
         elif p13_mapped and pLAM_mapped and starts_with_chr10:
             return "Complete 10qA", "10qA"
         elif pLAM_mapped and starts_with_chr10:
             return "Partial distal 10qA", "10qA"
+        elif q4b_mapped and q4b_high_identity and starts_with_chr10:
+            return "Partial distal 10qB", "10qB"
         else:
-            return "no_features", "NA"
+            # return "no_features", "NA"
+            try:
+                # Calculate expected read length based on MappedEstimatedCopies
+                mapped_estimated_copies = float(row.get("MappedEstimatedCopies", 0))  # Default to 0 if missing
+                expected_length_kb = mapped_estimated_copies * 3.3  # Convert to kb by multiplying by 3.3
+                actual_length_kb = float(row.get("ReadLength", 0)) / 1000  # Convert ReadLength to kb
+
+                # Compare expected length with actual length (+/- 3.3)
+                if actual_length_kb - 3.3 <= expected_length_kb <= actual_length_kb + 3.3:
+                    return "Partial internal Unclassified", "NA"
+                else:
+                    # ADD if it's partial distal unclassified, if GenomeCoords starts with chr4 then 4qB or chr10 then 10qB
+                    if row["GenomeCoords"].startswith("chr4"):
+                        return "Partial distal 4qB", "4qB"
+                    elif row["GenomeCoords"].startswith("chr10"):
+                        return "Partial distal 10qB", "10qB"
+                    # print(row["ReadID"], row["ReadLabel"])
+
+            except ValueError as e:
+                print(f"Error processing row {row.get('ReadID', 'Unknown')}: {e}")
 
     # Apply the updated function to assign both ReadLabel and Haplotype
-    print(results_df.apply(lambda row: pd.Series(assign_read_label_and_haplotype(row)), axis=1).head())
+    # print(results_df.apply(lambda row: pd.Series(assign_read_label_and_haplotype(row)), axis=1).head())
     results_df[["ReadLabel", "Haplotype"]] = results_df.apply(
         lambda row: pd.Series(assign_read_label_and_haplotype(row)), axis=1
     )
-
-    # print(results_df)
-    # results_df["EstimatedCopies"] = results_df.apply(calculate_estimated_copies, axis=1)
 
     # Parse the SSLP BED file if provided
     sslp_data = {}
@@ -458,9 +474,12 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, bam_file, fa
         "Complete 4qB",
         "Partial distal 4qB",
         "Partial proximal Unclassified",
+        "Partial internal Unclassified",
         "Complete 10qA",
         "Partial distal 10qA",
-        "no_features"
+        "Complete 10qB",
+        "Partial distal 10qB",
+        # "no_features"
     ]
 
     # Convert ReadLabel column to a categorical type with the specified order
