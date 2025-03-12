@@ -2,6 +2,7 @@ import pandas as pd
 from Bio import SeqIO
 import argparse
 
+from get_cne import get_cne
 
 # Ensure all reads from the BED file are included in results
 def ensure_all_reads_in_results(results, bed_df, features, lengths_dict):
@@ -16,6 +17,10 @@ def ensure_all_reads_in_results(results, bed_df, features, lengths_dict):
             results[read_id]["pLAM_polyA_coords"] = None
             results[read_id]["pLAM_polyA_signal"] = None
             results[read_id]["ReadLength"] = lengths_dict.get(read_id, "NA")
+            results[read_id]["4qA_probe_percent_identity"] = "NA"
+            results[read_id]["4qB_probe_percent_identity"] = "NA"
+            results[read_id]["duplex"] = False
+            results[read_id]["optimal_duplex_strand"] = None
     return results
 
 def load_fasta_to_dict(fasta_file):
@@ -81,65 +86,6 @@ def add_bed_info_to_results(results_df, bed_df):
     results_df["MAPQ"] = results_df.apply(get_bed_info, axis=1, column="MAPQ")
     return results_df
 
-
-def calculate_estimated_copies(row):
-    """
-    Calculate the estimated number of copies for a read based on its label and orientation (strand),
-    and round the result to 2 decimal places. Estimates are not calculated for "Complete 4qB" and "Partial distal 4qB".
-    """
-    try:
-        # Ensure valid coordinates before splitting
-        if row["pLAM_coords"] and row["pLAM_coords"] != "NA":
-            pLAM_start, pLAM_end = map(int, row["pLAM_coords"].split("-"))
-        else:
-            pLAM_start, pLAM_end = None, None
-
-        if row["p13-E11_coords"] and row["p13-E11_coords"] != "NA":
-            p13_start, p13_end = map(int, row["p13-E11_coords"].split("-"))
-        else:
-            p13_start, p13_end = None, None
-
-        read_length = int(row["ReadLength"]) if row["ReadLength"] != "NA" else None
-
-        # Skip calculation for specific ReadLabels
-        if row["ReadLabel"] in ["Complete 4qB", "Partial distal 4qB"]:
-            return "NA"
-
-        # Initialize copies as None
-        copies = None
-
-        # Determine estimated copies based on ReadLabel
-        if row["ReadLabel"] in ["Complete 4qA", "Complete 10qA"]:
-            if row["strand"] == "+":
-                # Direct orientation
-                copies = (pLAM_start - p13_end) / 3300 if pLAM_start and p13_end else None
-            elif row["strand"] == "-":
-                # Complement orientation
-                copies = (p13_start - pLAM_end) / 3300 if p13_start and pLAM_end else None
-
-        elif row["ReadLabel"] in ["Partial distal 4qA", "Partial distal 10qA"]:
-            if row["strand"] == "+":
-                # Direct orientation
-                copies = pLAM_start / 3300 if pLAM_start else None
-            elif row["strand"] == "-":
-                # Complement orientation
-                copies = (read_length - pLAM_end) / 3300 if read_length and pLAM_end else None
-
-        elif row["ReadLabel"] == "Partial proximal Unclassified":
-            if row["strand"] == "+":
-                # Direct orientation
-                copies = (read_length - p13_end) / 3300 if read_length and p13_end else None
-            elif row["strand"] == "-":
-                # Complement orientation
-                copies = p13_start / 3300 if p13_start else None
-
-        # Return rounded copies or "NA" if not calculable
-        return round(copies, 2) if copies is not None else "NA"
-
-    except Exception as e:
-        print(f"Error calculating EstimatedCopies for row {row.get('ReadID', 'Unknown')}: {e}")
-        return "NA"
-
 def parse_sslp_bed(sslp_file):
     """
     Parse the SSLP BED file to extract coordinates and sequence lengths.
@@ -201,7 +147,7 @@ def find_polyA_coords_and_signal(sequence, start, end):
     # Return None if no signals are found
     return None, None
 
-def check_duplex(read_name, psl_df):
+def check_duplex(read_name, psl_df, results_df):
     """
     Checking if a read is duplex
 
@@ -217,9 +163,14 @@ def check_duplex(read_name, psl_df):
         print(f"READNAME CHECK {strands}")
     if len(strands) == 0:
         print(read_name)
+
+    read_row = results_df[results_df["ReadID"] == read_name]
+    if (float(read_row["MappedEstimatedCopiesPlus"]) > 0.00) and (float(read_row["MappedEstimatedCopiesMinus"]) > 0.00):
+        return True
+
     return len(strands) > 1
 
-def select_strand_if_duplex(read_name, psl_df, features, COMPLETENESS_THRESHOLD=10):
+def select_strand_if_duplex(read_name, psl_df, results_df, features, COMPLETENESS_THRESHOLD=10):
     """
     Given a duplex read, pick based on order of priority
     1. more complete feature
@@ -238,14 +189,11 @@ def select_strand_if_duplex(read_name, psl_df, features, COMPLETENESS_THRESHOLD=
     if read_name == '807fa824-a2c9-4ca5-bab5-731179673a7e':
         print(filtered_df[['q_name', 't_start', 't_end', 'strand']])
 
-    if not check_duplex(read_name, filtered_df):
-        return False, filtered_df["strand"].iloc[0]
+    if not check_duplex(read_name, filtered_df, results_df):
+        return pd.Series([False, None])
 
     pos_feature = set()
     neg_feature = set()
-
-    pos_d4z4 = 0
-    neg_d4z4 = 0
 
     for _, row in filtered_df.iterrows():
         # Don't count if not complete
@@ -259,117 +207,181 @@ def select_strand_if_duplex(read_name, psl_df, features, COMPLETENESS_THRESHOLD=
             else:
                 neg_feature.add(row["q_name"])
 
-        if row["q_name"] == "d4z4_chr4_proximal":
-            if row["strand"] == '+':
-                pos_d4z4 += 1
-            else:
-                neg_d4z4 += 1
+    if read_name == '2bcd44d2-ba99-45f5-81f6-72bd25bd1035':
+        print(f"POS {pos_feature}")
+        print(f"NEG {neg_feature}")
 
     if len(pos_feature) == len(neg_feature):
-        if pos_d4z4 > neg_d4z4:
-            return True, '+'
-        return True, '-'
+        read_row = results_df[results_df["ReadID"] == read_name]
+        if float(read_row["MappedEstimatedCopiesPlus"]) > float(read_row["MappedEstimatedCopiesMinus"]):
+            return pd.Series([True, '+'])
+        
+        return pd.Series([True, '-'])
     elif len(pos_feature) > len(neg_feature):
-        return True, '+'
+        return pd.Series([True, '+'])
 
-    return True, '-'
+    return pd.Series([True, '-'])
 
 # def populate_features(results, row, read_name, feature_name, features, completeness, t_start, t_end, alignment_score, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10):
-def populate_features(psl_df, results, row, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10):
-    # Assign target (read) and query (feature)
-    read_name = row["t_name"]  # Target is the read
-    feature_name = row["q_name"]  # Query is the feature
-    # Check if t_start or t_end is NaN and handle gracefully
-    if pd.isna(row["t_start"]) or pd.isna(row["t_end"]):
-        #print(f"Skipping row due to missing t_start or t_end for ReadID: {read_name}, feature: {feature_name}")
-        return results
+# def populate_features(psl_df, results, row, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10):
+#     # Assign target (read) and query (feature)
+#     read_name = row["t_name"]  # Target is the read
+#     feature_name = row["q_name"]  # Query is the feature
+#     # Check if t_start or t_end is NaN and handle gracefully
+#     if pd.isna(row["t_start"]) or pd.isna(row["t_end"]):
+#         #print(f"Skipping row due to missing t_start or t_end for ReadID: {read_name}, feature: {feature_name}")
+#         return results
 
-    t_start, t_end = int(row["t_start"]), int(row["t_end"])
-    alignment_score = row["matches"] - row["mismatches"] - row["q_gap_bases"] - row["t_gap_bases"]
-    completeness = round((row["matches"] / row["q_size"]) * 100, 2)  # Feature completeness in percentage
-    read_length = int(row["t_size"])
+#     t_start, t_end = int(row["t_start"]), int(row["t_end"])
+#     alignment_score = row["matches"] - row["mismatches"] - row["q_gap_bases"] - row["t_gap_bases"]
+#     completeness = round((row["matches"] / row["q_size"]) * 100, 2)  # Feature completeness in percentage
+#     read_length = int(row["t_size"])
 
-    # Initialize results for this read if not already present
-    if read_name not in results:
-        results[read_name] = {f"{feature}_mapped": False for feature in features}
-        results[read_name].update({f"{feature}_coords": None for feature in features})
-        results[read_name].update({f"{feature}_score": None for feature in features})
-        results[read_name].update({f"{feature}_completeness": None for feature in features})
-        results[read_name]["pLAM_contains_polyA"] = None
-        results[read_name]["pLAM_polyA_coords"] = None
-        results[read_name]["pLAM_polyA_signal"] = None
-        results[read_name]["ReadLength"] = read_length
-        results[read_name]["4qA_probe_percent_identity"] = "NA"
-        results[read_name]["4qB_probe_percent_identity"] = "NA"
-        # add duplex check
-        results[read_name]["duplex"], results[read_name]["optimal_duplex_strand"] = select_strand_if_duplex(read_name, psl_df, features)
+#     # Initialize results for this read if not already present
+#     if read_name not in results:
+#         results[read_name] = {f"{feature}_mapped": False for feature in features}
+#         results[read_name].update({f"{feature}_coords": None for feature in features})
+#         results[read_name].update({f"{feature}_score": None for feature in features})
+#         results[read_name].update({f"{feature}_completeness": None for feature in features})
+#         results[read_name]["pLAM_contains_polyA"] = None
+#         results[read_name]["pLAM_polyA_coords"] = None
+#         results[read_name]["pLAM_polyA_signal"] = None
+#         results[read_name]["ReadLength"] = read_length
+#         results[read_name]["4qA_probe_percent_identity"] = "NA"
+#         results[read_name]["4qB_probe_percent_identity"] = "NA"
+#         # add duplex check
+#         results[read_name]["duplex"], results[read_name]["optimal_duplex_strand"] = select_strand_if_duplex(read_name, psl_df, features)
 
-    # If it is duplex and the current read isn't the optimal strand, don't put it on the summary tsv
-    if results[read_name]["duplex"] and (results[read_name]["optimal_duplex_strand"] != row["strand"]):
-        return results
+#     # If it is duplex and the current read isn't the optimal strand, don't put it on the summary tsv
+#     if results[read_name]["duplex"] and (results[read_name]["optimal_duplex_strand"] != row["strand"]):
+#         return results
 
-    # Populate details for the current feature
-    if feature_name in features:
-        # Skip this alignment if completeness is below the threshold
-        # COMPLETENESS_THRESHOLD = 10
+#     # Populate details for the current feature
+#     if feature_name in features:
+#         # Skip this alignment if completeness is below the threshold
+#         # COMPLETENESS_THRESHOLD = 10
+#         if completeness < COMPLETENESS_THRESHOLD:
+#             return results
+#         # Check if the feature is already filled; if so, skip to avoid overwriting
+#         if results[read_name][f"{feature_name}_mapped"]:
+#             return results
+
+#         results[read_name][f"{feature_name}_mapped"] = True
+#         results[read_name][f"{feature_name}_coords"] = f"{t_start}-{t_end}"
+#         results[read_name][f"{feature_name}_score"] = alignment_score
+#         results[read_name][f"{feature_name}_completeness"] = completeness
+
+#         # Check for polyadenylation signal if feature is pLAM
+#         if feature_name == "pLAM" and fasta_file:
+#             sequence = sequences_dict.get(read_name, "")
+#             if sequence:
+#                 #print(read_name)
+#                 #print(sequence)
+#                 polyA_coords, polyA_signal = find_polyA_coords_and_signal(sequence, t_start, t_end)
+#                 if polyA_signal in ["ATTAAA", "TTTAAT"]:
+#                     results[read_name]["pLAM_contains_polyA"] = True
+#                 else:
+#                     results[read_name]["pLAM_contains_polyA"] = False
+#                 results[read_name]["pLAM_polyA_coords"] = polyA_coords
+#                 results[read_name]["pLAM_polyA_signal"] = polyA_signal
+#             else:
+#                 results[read_name]["pLAM_contains_polyA"] = False
+#                 results[read_name]["pLAM_polyA_coords"] = None
+#                 results[read_name]["pLAM_polyA_signal"] = None
+#         if feature_name in ["4qA_probe", "4qB_probe"]:
+#             matches = row["matches"]
+#             mismatches = row["mismatches"]
+#             rep_matches = row["rep_matches"]
+
+#             # Calculate PercentIdentity
+#             percent_identity = (matches / (matches + mismatches + rep_matches)) * 100
+
+#             # Add to results dictionary
+#             if read_name not in results:
+#                 results[read_name] = {}
+#             results[read_name][f"{feature_name}_percent_identity"] = round(percent_identity, 2)
+
+#     return results
+
+def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10):
+    # Ensure 'ReadID' exists as an index for easy updating
+    results_df.set_index("ReadID", inplace=True)
+
+    for _, row in psl_df.iterrows():
+        read_name = row["t_name"]  # Target is the read
+        feature_name = row["q_name"]  # Query is the feature
+
+        # Skip row if 't_start' or 't_end' is NaN
+        if pd.isna(row["t_start"]) or pd.isna(row["t_end"]):
+            continue
+
+        t_start, t_end = int(row["t_start"]), int(row["t_end"])
+        alignment_score = row["matches"] - row["mismatches"] - row["q_gap_bases"] - row["t_gap_bases"]
+        completeness = round((row["matches"] / row["q_size"]) * 100, 2)  # Feature completeness in percentage
+        read_length = int(row["t_size"])
+
+        # If read doesn't exist, skip
+        if read_name not in results_df.index:
+            continue
+
+        # Update ReadLength if not set
+        if pd.isna(results_df.at[read_name, "ReadLength"]):
+            results_df.at[read_name, "ReadLength"] = read_length
+
+        # Skip if feature_name is not in the list
+        if feature_name not in features:
+            continue
+
+        # Skip this alignment if completeness is below threshold
         if completeness < COMPLETENESS_THRESHOLD:
-            return results
-        # Check if the feature is already filled; if so, skip to avoid overwriting
-        if results[read_name][f"{feature_name}_mapped"]:
-            return results
+            continue
 
-        results[read_name][f"{feature_name}_mapped"] = True
-        results[read_name][f"{feature_name}_coords"] = f"{t_start}-{t_end}"
-        results[read_name][f"{feature_name}_score"] = alignment_score
-        results[read_name][f"{feature_name}_completeness"] = completeness
+        # If the feature is already mapped, skip to avoid overwriting
+        if results_df.at[read_name, f"{feature_name}_mapped"]:
+            continue
 
-        # Check for polyadenylation signal if feature is pLAM
+        if results_df.at[read_name, "duplex"] and (results_df.at[read_name, "optimal_duplex_strand"] != row["strand"]):
+            continue
+
+        # Update feature mapping details
+        results_df.at[read_name, f"{feature_name}_mapped"] = True
+        results_df.at[read_name, f"{feature_name}_coords"] = f"{t_start}-{t_end}"
+        results_df.at[read_name, f"{feature_name}_score"] = alignment_score
+        results_df.at[read_name, f"{feature_name}_completeness"] = completeness
+
+        # Handle polyA signal for pLAM
         if feature_name == "pLAM" and fasta_file:
             sequence = sequences_dict.get(read_name, "")
             if sequence:
-                #print(read_name)
-                #print(sequence)
                 polyA_coords, polyA_signal = find_polyA_coords_and_signal(sequence, t_start, t_end)
-                if polyA_signal in ["ATTAAA", "TTTAAT"]:
-                    results[read_name]["pLAM_contains_polyA"] = True
-                else:
-                    results[read_name]["pLAM_contains_polyA"] = False
-                results[read_name]["pLAM_polyA_coords"] = polyA_coords
-                results[read_name]["pLAM_polyA_signal"] = polyA_signal
+                results_df.at[read_name, "pLAM_contains_polyA"] = polyA_signal in ["ATTAAA", "TTTAAT"]
+                results_df.at[read_name, "pLAM_polyA_coords"] = polyA_coords
+                results_df.at[read_name, "pLAM_polyA_signal"] = polyA_signal
             else:
-                results[read_name]["pLAM_contains_polyA"] = False
-                results[read_name]["pLAM_polyA_coords"] = None
-                results[read_name]["pLAM_polyA_signal"] = None
+                results_df.at[read_name, "pLAM_contains_polyA"] = False
+
+        # Handle percent identity for 4qA_probe and 4qB_probe
         if feature_name in ["4qA_probe", "4qB_probe"]:
             matches = row["matches"]
             mismatches = row["mismatches"]
             rep_matches = row["rep_matches"]
-
-            # Calculate PercentIdentity
             percent_identity = (matches / (matches + mismatches + rep_matches)) * 100
+            results_df.at[read_name, f"{feature_name}_percent_identity"] = round(percent_identity, 2)
 
-            # Add to results dictionary
-            if read_name not in results:
-                results[read_name] = {}
-            results[read_name][f"{feature_name}_percent_identity"] = round(percent_identity, 2)
+    # Reset index before returning
+    results_df.reset_index(inplace=True)
+    return results_df
 
-    return results
-
-def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=None):
+def read_psl(psl_file):
     """
-    Parse a PSL file and create a table summarising alignments for each feature per read.
-    
+    Read a PSL file
+
     Args:
-        psl_file (str): Path to the PSL file.
-        output_table (str): Path to save the output table (TSV format).
-        fasta_file (str): Path to the FASTA file (optional) for pLAM sequence validation.
-        
-    Returns:
-        None
-    """
- 
-    sequences_dict, lengths_dict = load_fasta_to_dict(fasta_file)
+        psl_file (str): Path to the PSL file
 
+    Returns:
+        psl_df (pd.DataFrame): DataFrame containing the PSL data
+    """
     # Column names for PSL format
     psl_columns = [
         "matches", "mismatches", "rep_matches", "n_count", "q_gap_count",
@@ -390,24 +402,52 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
     for col in numeric_columns:
         psl_df[col] = pd.to_numeric(psl_df[col], errors="coerce")
 
+    return psl_df
+
+def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, bam_file, fasta_file=None):
+    """
+    Parse a PSL file and create a table summarising alignments for each feature per read.
+    
+    Args:
+        psl_file (str): Path to the PSL file.
+        output_table (str): Path to save the output table (TSV format).
+        fasta_file (str): Path to the FASTA file (optional) for pLAM sequence validation.
+        
+    Returns:
+        None
+    """
+ 
+    sequences_dict, lengths_dict = load_fasta_to_dict(fasta_file)
+
+    psl_df = read_psl(psl_file)
+
     # List of features to check
     features = ["d4z4_chr4_proximal", "p13-E11", "pLAM","4qA_probe","4qB_probe"]
 
     # Prepare results dictionary
     results = {}
 
-    for _, row in psl_df.iterrows():
-        results = populate_features(psl_df, results, row, features, fasta_file, sequences_dict)
-
     # Ensure all BED reads are in results
     bed_df = read_bed_file(bed_file)
     results = ensure_all_reads_in_results(results, bed_df, features, lengths_dict)
 
-    # print(results)
-
     # Convert results dictionary to a DataFrame
     results_df = pd.DataFrame.from_dict(results, orient="index").reset_index()
     results_df.rename(columns={"index": "ReadID"}, inplace=True)
+
+    # Add GenomeCoords, strand, and MAPQ to results DataFrame
+    results_df = add_bed_info_to_results(results_df, bed_df)
+
+    results_df = get_cne(results_df, bam_file)
+
+    results_df[["duplex", "optimal_duplex_strand"]] = results_df.apply(
+        lambda row: select_strand_if_duplex(row['ReadID'], psl_df, results_df, features), axis=1
+    )
+    
+    # Populate features from psl file
+    results_df = populate_features(psl_df, results_df, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10)
+    # for _, row in psl_df.iterrows():
+    #     results = populate_features(psl_df, results, row, features, fasta_file, sequences_dict)
 
     # print(results_df)
 
@@ -445,16 +485,13 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
         else:
             return "no_features", "NA"
 
-
-    # Add GenomeCoords, strand, and MAPQ to results DataFrame
-    results_df = add_bed_info_to_results(results_df, bed_df)
-
     # Apply the updated function to assign both ReadLabel and Haplotype
     print(results_df.apply(lambda row: pd.Series(assign_read_label_and_haplotype(row)), axis=1).head())
     results_df[["ReadLabel", "Haplotype"]] = results_df.apply(
         lambda row: pd.Series(assign_read_label_and_haplotype(row)), axis=1
     )
 
+    # print(results_df)
     # results_df["EstimatedCopies"] = results_df.apply(calculate_estimated_copies, axis=1)
 
     # Parse the SSLP BED file if provided
@@ -484,6 +521,9 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, fasta_file=N
 
     if sslp_data:
         columns.extend(["SSLP_coords", "SSLP_length"])
+
+    columns.extend(["MappedEstimatedCopies", "MappedEstimatedCopiesPlus", "MappedEstimatedCopiesMinus"])
+    # print(results_df)
 
     results_df = results_df[columns]
 
@@ -532,6 +572,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", required=True, help="Path to the output TSV file.")
     parser.add_argument("--fasta", required=False, help="Path to the FASTA file for polyA signal checking.")
     parser.add_argument("--sslp", help="Path to SSLP BED file.", default=None)
+    parser.add_argument("--aligned-bam", help="Path to merged haplotype bam file.", default=None)
     
     args = parser.parse_args()
 
@@ -541,5 +582,6 @@ if __name__ == "__main__":
         bed_file=args.bed,
         output_table=args.output,
         fasta_file=args.fasta,
-        sslp_file=args.sslp
+        sslp_file=args.sslp,
+        bam_file=args.aligned_bam
     )
