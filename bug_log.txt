@@ -6,6 +6,9 @@
    - "37b3da42-79a6-4022-9139-ce8e5efa28ca": another duplex with weird position  
    - "a8a394f9-d6d1-4ed4-bd57-4dba11a67592": another duplex with weird position of repeats
    - "2bcd44d2-ba99-45f5-81f6-72bd25bd1035": "-" has SSLP but "+" doesn't? And duplex optimal should take in "-" instead
+   - 14/3/2025 (same before after flipping - to + :
+     87fb01b1-7ffa-4d27-85bc-a18928227712: Duplex, the 4qB is in the middle of the repeats for negative strand (Maybe just lack of specificity for the probe?
+     2bcd44d2-ba99-45f5-81f6-72bd25bd1035, 15ced10e-caf4-4d99-b0e7-80e62790651f: Duplex, and 2 strands each
 
 2. Current duplex check are only for the reads that have features, not if there's only repeats
 
