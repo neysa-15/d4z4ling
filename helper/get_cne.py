@@ -5,17 +5,17 @@ import os
 import subprocess
 import argparse
 
-parser = argparse.ArgumentParser(description="Calculate mapped estimated copies")
-parser.add_argument("--outdir", required=True, help="Output directory")
-parser.add_argument("--prefix", required=True, help="Sample prefix")
+# parser = argparse.ArgumentParser(description="Calculate mapped estimated copies")
+# parser.add_argument("--outdir", required=True, help="Output directory")
+# parser.add_argument("--prefix", required=True, help="Sample prefix")
 
-args = parser.parse_args()
+# args = parser.parse_args()
 
-OUTDIR = os.path.abspath(args.outdir)
-PREFIX = args.prefix
-merged_bam_path = f"{OUTDIR}/{PREFIX}_aligned_haplotypes.bam"
-input_summary_path = f"{OUTDIR}/{PREFIX}_mapped_features_summary.tsv"
-output_summary_path = f"{OUTDIR}/{PREFIX}_updated_features_summary.tsv"
+# OUTDIR = os.path.abspath(args.outdir)
+# PREFIX = args.prefix
+# merged_bam_path = f"{OUTDIR}/{PREFIX}_aligned_haplotypes.bam"
+# input_summary_path = f"{OUTDIR}/{PREFIX}_mapped_features_summary.tsv"
+# output_summary_path = f"{OUTDIR}/{PREFIX}_updated_features_summary.tsv"
 
 repeat_regions = {
     "4A": "HM190196.1_dux4_4A166:1-3199",
@@ -32,8 +32,10 @@ def get_haplotype(chrom):
     return "NA"
 
 def compute_depth(region, bam_file, read_id, strand_flag):
-    temp_bam_path = f"{OUTDIR}/{read_id}_{os.getpid()}_temp.bam"
-    read_id_file = f"{OUTDIR}/{read_id}.txt"
+    # temp_bam_path = f"{OUTDIR}/{read_id}_{os.getpid()}_temp.bam"
+    # read_id_file = f"{OUTDIR}/{read_id}.txt"
+    temp_bam_path = f"{read_id}_{os.getpid()}_temp.bam"
+    read_id_file = f"{read_id}.txt"
 
     # Write Read ID to file
     with open(read_id_file, "w") as f:
@@ -64,7 +66,7 @@ def compute_depth(region, bam_file, read_id, strand_flag):
     return round(sum(depths) / len(depths), 2) if depths else 0
 
 
-def estimate_copies(read_id, chrom):
+def estimate_copies(read_id, chrom, merged_bam_path):
     haplotype = get_haplotype(chrom)
     if haplotype == "NA":
         return read_id, "NA", "NA", "NA"
@@ -79,21 +81,38 @@ def estimate_copies(read_id, chrom):
 
     return read_id, number_copies, number_copies_plus, number_copies_minus
 
-# Read input data
-df = pd.read_csv(input_summary_path, sep="\t")
-df_filtered = df[df.columns[:2]]
+def get_cne(df, merged_bam_path):
+    filtered_df = df[["ReadID", "GenomeCoords"]]
 
-# Run in parallel
-with multiprocessing.Pool(processes=56) as pool:
-    results = pool.starmap(estimate_copies, df_filtered.values)
+    print(filtered_df)
+
+    with multiprocessing.Pool(processes=56) as pool:
+        # results = pool.starmap(estimate_copies, filtered_df.values)
+        results = pool.starmap(estimate_copies, [(read_id, chrom, merged_bam_path) for read_id, chrom in filtered_df.values])
+
+    # Convert results to DataFrame
+    df_results = pd.DataFrame(results, columns=["ReadID", "MappedEstimatedCopies", "MappedEstimatedCopiesPlus", "MappedEstimatedCopiesMinus"])
+
+    # Merge with original summary file
+    df_final = pd.merge(df, df_results, on="ReadID", how="left")
+
+    return df_final
+
+# Read input data
+# df = pd.read_csv(input_summary_path, sep="\t")
+# df_filtered = df[df.columns[:2]]
+
+# # Run in parallel
+# with multiprocessing.Pool(processes=56) as pool:
+#     results = pool.starmap(estimate_copies, df_filtered.values)
 
 # Convert results to DataFrame
-df_results = pd.DataFrame(results, columns=["ReadID", "MappedEstimatedCopies", "MappedEstimatedCopiesPlus", "MappedEstimatedCopiesMinus"])
+# df_results = pd.DataFrame(results, columns=["ReadID", "MappedEstimatedCopies", "MappedEstimatedCopiesPlus", "MappedEstimatedCopiesMinus"])
 
-# Merge with original summary file
-df_final = pd.merge(df, df_results, on="ReadID", how="left")
+# # Merge with original summary file
+# df_final = pd.merge(df, df_results, on="ReadID", how="left")
 
-# Save output
-df_final.to_csv(input_summary_path, sep="\t", index=False)
+# # Save output
+# df_final.to_csv(input_summary_path, sep="\t", index=False)
 
-print("Processing complete. Output saved to", input_summary_path)
+# print("Processing complete. Output saved to", input_summary_path)

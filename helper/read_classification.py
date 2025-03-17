@@ -147,7 +147,7 @@ def find_polyA_coords_and_signal(sequence, start, end):
     # Return None if no signals are found
     return None, None
 
-def check_duplex(read_name, psl_df, results_df):
+def check_duplex(read_name, psl_df, results_df, COMPLETENESS_THRESHOLD=10):
     """
     Checking if a read is duplex
 
@@ -158,11 +158,20 @@ def check_duplex(read_name, psl_df, results_df):
     Returns:
         boolean
     """
-    strands = set(psl_df.loc[psl_df["t_name"] == read_name, "strand"])
-    if read_name == "2e8b4a10-9d11-42aa-af66-f41551109e7f":
-        print(f"READNAME CHECK {strands}")
-    if len(strands) == 0:
-        print(read_name)
+    # strands = set(psl_df.loc[psl_df["t_name"] == read_name, "strand"])
+    strands = set()
+    for _, f_row in psl_df.iterrows():
+        completeness = round((f_row["matches"] / f_row["q_size"]) * 100, 2)
+        if completeness < COMPLETENESS_THRESHOLD:
+            continue
+
+        # if f_row["strand"] == '+':
+        strands.add(f_row["strand"])
+
+    if read_name == 'c95c3baa-460b-4c09-a80c-4e2a229603d0':
+        print(strands)
+    # if len(strands) == 0:
+    #     print(read_name)
 
     read_row = results_df[results_df["ReadID"] == read_name]
     if (float(read_row["MappedEstimatedCopiesPlus"]) > 0.00) and (float(read_row["MappedEstimatedCopiesMinus"]) > 0.00):
@@ -170,61 +179,127 @@ def check_duplex(read_name, psl_df, results_df):
 
     return len(strands) > 1
 
-def select_strand_if_duplex(read_name, psl_df, results_df, features, COMPLETENESS_THRESHOLD=10):
+def process_duplex_row(row, psl_df, results_df, features, COMPLETENESS_THRESHOLD=10):
     """
-    Given a duplex read, pick based on order of priority
-    1. more complete feature
-    2. if same number of feature, pick the longer read
+    Process a row: determine if it's duplex and duplicate if needed.
 
     Args:
-        read_name (str): t_name of psl
-        psl_df (df): df of all features
-        features (list): list of features
+        row (pd.Series): A row from results_df
+        psl_df (pd.DataFrame): Feature alignment dataframe
+        results_df (pd.DataFrame): The original results dataframe
+        features (list): List of features
+        COMPLETENESS_THRESHOLD (int): Minimum completeness percentage
 
     Returns:
-        '+' or '-' strand
+        list of pd.Series: Either one or two rows, depending on duplex status
     """
+    read_name = row["ReadID"]
     filtered_df = psl_df.loc[psl_df["t_name"] == read_name]
 
-    if read_name == '807fa824-a2c9-4ca5-bab5-731179673a7e':
-        print(filtered_df[['q_name', 't_start', 't_end', 'strand']])
+    if filtered_df.empty:
+        row["duplex"] = False
+        row["optimal duplex strand"] = None
+        return [row]
 
-    if not check_duplex(read_name, filtered_df, results_df):
-        return pd.Series([False, None])
+    is_duplex = check_duplex(read_name, filtered_df, results_df)
 
-    pos_feature = set()
-    neg_feature = set()
+    if not is_duplex:
+        row["duplex"] = False
+        row["optimal duplex strand"] = filtered_df["strand"].iloc[0]
+        return [row]
 
-    for _, row in filtered_df.iterrows():
-        # Don't count if not complete
-        completeness = round((row["matches"] / row["q_size"]) * 100, 2)
+    # If duplex, determine the optimal strand
+    pos_feature, neg_feature = set(), set()
+
+    for _, f_row in filtered_df.iterrows():
+        completeness = round((f_row["matches"] / f_row["q_size"]) * 100, 2)
         if completeness < COMPLETENESS_THRESHOLD:
             continue
 
-        if row["q_name"] in features:
-            if row["strand"] == '+':
-                pos_feature.add(row["q_name"])
+        if f_row["q_name"] in features:
+            if f_row["strand"] == '+':
+                pos_feature.add(f_row["q_name"])
             else:
-                neg_feature.add(row["q_name"])
+                neg_feature.add(f_row["q_name"])
 
-    if read_name == '2bcd44d2-ba99-45f5-81f6-72bd25bd1035':
+    if read_name == 'c95c3baa-460b-4c09-a80c-4e2a229603d0':
         print(f"POS {pos_feature}")
         print(f"NEG {neg_feature}")
 
     if len(pos_feature) == len(neg_feature):
-        read_row = results_df[results_df["ReadID"] == read_name]
-        if float(read_row["MappedEstimatedCopiesPlus"]) > float(read_row["MappedEstimatedCopiesMinus"]):
-            return pd.Series([True, '+'])
-        
-        return pd.Series([True, '-'])
+        read_row = results_df.loc[results_df["ReadID"] == read_name]
+        optimal_strand = '+' if float(read_row["MappedEstimatedCopiesPlus"].values[0]) > \
+                               float(read_row["MappedEstimatedCopiesMinus"].values[0]) else '-'
     elif len(pos_feature) > len(neg_feature):
-        return pd.Series([True, '+'])
+        optimal_strand = '+'
+    else:
+        optimal_strand = '-'
 
-    return pd.Series([True, '-'])
+    # Create two rows (one for each strand)
+    row["duplex"] = True
+    row["optimal duplex strand"] = optimal_strand
+    row["strand"] = optimal_strand
+
+    row_dupe = row.copy()
+    row_dupe["strand"] = '+' if optimal_strand == '-' else '-'
+
+    return [row, row_dupe]  # Returning a list of rows
+
+# def select_strand_if_duplex(read_name, psl_df, results_df, features, COMPLETENESS_THRESHOLD=10):
+#     """
+#     Given a duplex read, pick based on order of priority
+#     1. more complete feature
+#     2. if same number of feature, pick the longer read
+
+#     Args:
+#         read_name (str): t_name of psl
+#         psl_df (df): df of all features
+#         features (list): list of features
+
+#     Returns:
+#         '+' or '-' strand
+#     """
+#     filtered_df = psl_df.loc[psl_df["t_name"] == read_name]
+
+#     if read_name == '807fa824-a2c9-4ca5-bab5-731179673a7e':
+#         print(filtered_df[['q_name', 't_start', 't_end', 'strand']])
+
+#     if not check_duplex(read_name, filtered_df, results_df):
+#         return pd.Series([False, None])
+
+#     pos_feature = set()
+#     neg_feature = set()
+
+#     for _, row in filtered_df.iterrows():
+#         # Don't count if not complete
+#         completeness = round((row["matches"] / row["q_size"]) * 100, 2)
+#         if completeness < COMPLETENESS_THRESHOLD:
+#             continue
+
+#         if row["q_name"] in features:
+#             if row["strand"] == '+':
+#                 pos_feature.add(row["q_name"])
+#             else:
+#                 neg_feature.add(row["q_name"])
+
+#     if read_name == '2bcd44d2-ba99-45f5-81f6-72bd25bd1035':
+#         print(f"POS {pos_feature}")
+#         print(f"NEG {neg_feature}")
+
+#     if len(pos_feature) == len(neg_feature):
+#         read_row = results_df[results_df["ReadID"] == read_name]
+#         if float(read_row["MappedEstimatedCopiesPlus"]) > float(read_row["MappedEstimatedCopiesMinus"]):
+#             return pd.Series([True, '+'])
+        
+#         return pd.Series([True, '-'])
+#     elif len(pos_feature) > len(neg_feature):
+#         return pd.Series([True, '+'])
+
+#     return pd.Series([True, '-'])
 
 def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10):
-    # Ensure 'ReadID' exists as an index for easy updating
-    results_df.set_index("ReadID", inplace=True)
+    # Set MultiIndex on ReadID and strand for uniqueness
+    results_df.set_index(["ReadID", "strand"], inplace=True)
 
     for _, row in psl_df.iterrows():
         read_name = row["t_name"]  # Target is the read
@@ -238,14 +313,15 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
         alignment_score = row["matches"] - row["mismatches"] - row["q_gap_bases"] - row["t_gap_bases"]
         completeness = round((row["matches"] / row["q_size"]) * 100, 2)  # Feature completeness in percentage
         read_length = int(row["t_size"])
+        strand = row["strand"]
 
-        # If read doesn't exist, skip
-        if read_name not in results_df.index:
+        # Ensure the read-strand combination exists in results_df
+        if (read_name, strand) not in results_df.index:
             continue
 
         # Update ReadLength if not set
-        if pd.isna(results_df.at[read_name, "ReadLength"]):
-            results_df.at[read_name, "ReadLength"] = read_length
+        if pd.isna(results_df.at[(read_name, strand), "ReadLength"]):
+            results_df.at[(read_name, strand), "ReadLength"] = read_length
 
         # Skip if feature_name is not in the list
         if feature_name not in features:
@@ -255,29 +331,30 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
         if completeness < COMPLETENESS_THRESHOLD:
             continue
 
-        # If the feature is already mapped, skip to avoid overwriting
-        if results_df.at[read_name, f"{feature_name}_mapped"]:
-            continue
+        # # If the feature is already mapped, skip to avoid overwriting
+        # print("FEATURE")
+        # print(results_df.at[(read_name, strand), f"{feature_name}_mapped"])
+        # print("----")
 
-        if results_df.at[read_name, "duplex"] and (results_df.at[read_name, "optimal_duplex_strand"] != row["strand"]):
+        if results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True:
             continue
 
         # Update feature mapping details
-        results_df.at[read_name, f"{feature_name}_mapped"] = True
-        results_df.at[read_name, f"{feature_name}_coords"] = f"{t_start}-{t_end}"
-        results_df.at[read_name, f"{feature_name}_score"] = alignment_score
-        results_df.at[read_name, f"{feature_name}_completeness"] = completeness
+        results_df.at[(read_name, strand), f"{feature_name}_mapped"] = True
+        results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{t_start}-{t_end}"
+        results_df.at[(read_name, strand), f"{feature_name}_score"] = alignment_score
+        results_df.at[(read_name, strand), f"{feature_name}_completeness"] = completeness
 
         # Handle polyA signal for pLAM
         if feature_name == "pLAM" and fasta_file:
             sequence = sequences_dict.get(read_name, "")
             if sequence:
                 polyA_coords, polyA_signal = find_polyA_coords_and_signal(sequence, t_start, t_end)
-                results_df.at[read_name, "pLAM_contains_polyA"] = polyA_signal in ["ATTAAA", "TTTAAT"]
-                results_df.at[read_name, "pLAM_polyA_coords"] = polyA_coords
-                results_df.at[read_name, "pLAM_polyA_signal"] = polyA_signal
+                results_df.at[(read_name, strand), "pLAM_contains_polyA"] = polyA_signal in ["ATTAAA", "TTTAAT"]
+                results_df.at[(read_name, strand), "pLAM_polyA_coords"] = polyA_coords
+                results_df.at[(read_name, strand), "pLAM_polyA_signal"] = polyA_signal
             else:
-                results_df.at[read_name, "pLAM_contains_polyA"] = False
+                results_df.at[(read_name, strand), "pLAM_contains_polyA"] = False
 
         # Handle percent identity for 4qA_probe and 4qB_probe
         if feature_name in ["4qA_probe", "4qB_probe"]:
@@ -285,11 +362,12 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
             mismatches = row["mismatches"]
             rep_matches = row["rep_matches"]
             percent_identity = (matches / (matches + mismatches + rep_matches)) * 100
-            results_df.at[read_name, f"{feature_name}_percent_identity"] = round(percent_identity, 2)
+            results_df.at[(read_name, strand), f"{feature_name}_percent_identity"] = round(percent_identity, 2)
 
     # Reset index before returning
     results_df.reset_index(inplace=True)
     return results_df
+
 
 def read_psl(psl_file):
     """
@@ -359,9 +437,21 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, bam_file, fa
 
     results_df = get_cne(results_df, bam_file)
 
-    results_df[["duplex", "optimal_duplex_strand"]] = results_df.apply(
-        lambda row: select_strand_if_duplex(row['ReadID'], psl_df, results_df, features), axis=1
-    )
+    # results_df[["duplex", "optimal_duplex_strand"]] = results_df.apply(
+    #     lambda row: select_strand_if_duplex(row['ReadID'], psl_df, results_df, features), axis=1
+    # )
+
+    # **Applying process_duplex_row correctly**
+    expanded_rows = []
+    for _, row in results_df.iterrows():
+        expanded_rows.extend(process_duplex_row(row, psl_df, results_df, features))
+
+    # Create a new DataFrame
+    results_df = pd.DataFrame(expanded_rows).reset_index(drop=True)
+
+    # print(results_df)
+    # results_df.to_csv(output_table, index=False, sep="\t")
+    # return
     
     # Populate features from psl file
     results_df = populate_features(psl_df, results_df, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10)
@@ -385,18 +475,18 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, bam_file, fa
             return "Complete 4qA", "4qA"
         elif p13_mapped and q4b_mapped and q4b_high_identity and starts_with_chr4:
             return "Complete 4qB", "4qB"
+        elif p13_mapped and pLAM_mapped and starts_with_chr10:
+            return "Complete 10qA", "10qA"
         elif pLAM_mapped and starts_with_chr4:
             return "Partial distal 4qA", "4qA"
         elif q4b_mapped and q4b_high_identity and starts_with_chr4:
             return "Partial distal 4qB", "4qB"
-        elif p13_mapped and (starts_with_chr4 or starts_with_chr10):
-            return "Partial proximal Unclassified", "NA"  # Haplotype is NA for this label
-        elif p13_mapped and pLAM_mapped and starts_with_chr10:
-            return "Complete 10qA", "10qA"
         elif pLAM_mapped and starts_with_chr10:
             return "Partial distal 10qA", "10qA"
         elif q4b_mapped and q4b_high_identity and starts_with_chr10:
             return "Partial distal 10qB", "10qB"
+        elif p13_mapped and (starts_with_chr4 or starts_with_chr10):
+            return "Partial proximal Unclassified", "NA"  # Haplotype is NA for this label
         else:
             # return "no_features", "NA"
             try:
