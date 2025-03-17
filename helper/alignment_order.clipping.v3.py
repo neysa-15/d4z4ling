@@ -305,7 +305,7 @@ def get_order(read):
     for alignment in alignment_details:
         strand = alignment["strand"]
         sequence_to_use = read.query_sequence
-        if both_strands and  strand == "-":
+        if both_strands and strand == "+":
             sequence_to_use = reverse_complement(read.query_sequence)
         alignment["sequence"] = extract_aligned_sequence(sequence_to_use, alignment["cigar"], 0)
 
