@@ -168,13 +168,18 @@ def check_duplex(read_name, psl_df, results_df, COMPLETENESS_THRESHOLD=10):
         # if f_row["strand"] == '+':
         strands.add(f_row["strand"])
 
-    if read_name == 'c95c3baa-460b-4c09-a80c-4e2a229603d0':
+    if read_name == '36b7b008-5ad4-4645-9b22-5dcd109af28d':
+        print("CHECKING DUPLEX READ NAME 36b7b008-5ad4-4645-9b22-5dcd109af28d")
         print(strands)
     # if len(strands) == 0:
     #     print(read_name)
 
     read_row = results_df[results_df["ReadID"] == read_name]
     if (float(read_row["MappedEstimatedCopiesPlus"]) > 0.00) and (float(read_row["MappedEstimatedCopiesMinus"]) > 0.00):
+        if read_name == '36b7b008-5ad4-4645-9b22-5dcd109af28d':
+            print("CHECKING COPIES 36b7b008-5ad4-4645-9b22-5dcd109af28d")
+            print(read_row["MappedEstimatedCopiesPlus"])
+            print(read_row["MappedEstimatedCopiesMinus"])
         return True
 
     return len(strands) > 1
@@ -196,16 +201,17 @@ def process_duplex_row(row, psl_df, results_df, features, COMPLETENESS_THRESHOLD
     read_name = row["ReadID"]
     filtered_df = psl_df.loc[psl_df["t_name"] == read_name]
 
-    if filtered_df.empty:
-        row["duplex"] = False
-        row["optimal duplex strand"] = None
-        return [row]
+    # if filtered_df.empty:
+    #     row["duplex"] = False
+    #     row["optimal duplex strand"] = None
+    #     return [row]
 
     is_duplex = check_duplex(read_name, filtered_df, results_df)
 
     if not is_duplex:
         row["duplex"] = False
-        row["optimal duplex strand"] = filtered_df["strand"].iloc[0]
+        # row["optimal duplex strand"] = filtered_df["strand"].iloc[0]
+        row["optimal duplex strand"] = row["strand"]
         return [row]
 
     # If duplex, determine the optimal strand
@@ -437,6 +443,9 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, bam_file, fa
 
     results_df = get_cne(results_df, bam_file)
 
+    if results_df["ReadID"].str.contains("36b7b008-5ad4-4645-9b22-5dcd109af28d").any():
+        print("HELLO")
+
     # results_df[["duplex", "optimal_duplex_strand"]] = results_df.apply(
     #     lambda row: select_strand_if_duplex(row['ReadID'], psl_df, results_df, features), axis=1
     # )
@@ -444,6 +453,8 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, bam_file, fa
     # **Applying process_duplex_row correctly**
     expanded_rows = []
     for _, row in results_df.iterrows():
+        if row["ReadID"] == '36b7b008-5ad4-4645-9b22-5dcd109af28d':
+            print("IT IS HERE")
         expanded_rows.extend(process_duplex_row(row, psl_df, results_df, features))
 
     # Create a new DataFrame
