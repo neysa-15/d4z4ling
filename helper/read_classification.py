@@ -299,17 +299,8 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
         # To combine fragmented d4z4_chr4_proximal, taking the coordinates that covers the most
         # For now it's currently only changing the coordinate (not the other components)
         if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name == "d4z4_chr4_proximal") and (results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"] is not None):
-            # print(results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"])
-            # print(results_df.loc[read_name, :]["d4z4_chr4_proximal_coords"].values[0])
-            # prev_tstart = results_df[results_df["ReadID"] == read_name]["d4z4_chr4_proximal_coords"].values[0].split("-")[0]
-
-            # if (results_df.loc[read_name, :]["d4z4_chr4_proximal_coords"].values[0]) is None:
-            #     continue
-
             prev_tstart = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[0]
             prev_tend = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[1]
-
-            # prev_tend = results_df[results_df["ReadID"] == read_name]["d4z4_chr4_proximal_coords"].values[0].split("-")[1]
 
             prev_tstart = int(prev_tstart)
             prev_tend = int(prev_tend)
