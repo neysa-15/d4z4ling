@@ -5,7 +5,7 @@ import argparse
 from get_cne import get_cne
 
 # Ensure all reads from the BED file are included in results
-def ensure_all_reads_in_results(results, bed_df, features, lengths_dict):
+def initialise_results(results, bed_df, features, lengths_dict):
     for read_id in bed_df["read_id"].unique():
         if read_id not in results:
             # Initialize default values for missing reads
@@ -211,7 +211,7 @@ def process_duplex_row(row, psl_df, results_df, features, COMPLETENESS_THRESHOLD
     if not is_duplex:
         row["duplex"] = False
         # row["optimal duplex strand"] = filtered_df["strand"].iloc[0]
-        row["optimal duplex strand"] = row["strand"]
+        row["optimal_duplex_strand"] = row["strand"]
         return [row]
 
     # If duplex, determine the optimal strand
@@ -243,65 +243,15 @@ def process_duplex_row(row, psl_df, results_df, features, COMPLETENESS_THRESHOLD
 
     # Create two rows (one for each strand)
     row["duplex"] = True
-    row["optimal duplex strand"] = optimal_strand
+    row["optimal_duplex_strand"] = optimal_strand
     row["strand"] = optimal_strand
 
     row_dupe = row.copy()
     row_dupe["strand"] = '+' if optimal_strand == '-' else '-'
 
+    print(row["ReadID"], row["strand"], row["duplex"], row["optimal_duplex_strand"])
+
     return [row, row_dupe]  # Returning a list of rows
-
-# def select_strand_if_duplex(read_name, psl_df, results_df, features, COMPLETENESS_THRESHOLD=10):
-#     """
-#     Given a duplex read, pick based on order of priority
-#     1. more complete feature
-#     2. if same number of feature, pick the longer read
-
-#     Args:
-#         read_name (str): t_name of psl
-#         psl_df (df): df of all features
-#         features (list): list of features
-
-#     Returns:
-#         '+' or '-' strand
-#     """
-#     filtered_df = psl_df.loc[psl_df["t_name"] == read_name]
-
-#     if read_name == '807fa824-a2c9-4ca5-bab5-731179673a7e':
-#         print(filtered_df[['q_name', 't_start', 't_end', 'strand']])
-
-#     if not check_duplex(read_name, filtered_df, results_df):
-#         return pd.Series([False, None])
-
-#     pos_feature = set()
-#     neg_feature = set()
-
-#     for _, row in filtered_df.iterrows():
-#         # Don't count if not complete
-#         completeness = round((row["matches"] / row["q_size"]) * 100, 2)
-#         if completeness < COMPLETENESS_THRESHOLD:
-#             continue
-
-#         if row["q_name"] in features:
-#             if row["strand"] == '+':
-#                 pos_feature.add(row["q_name"])
-#             else:
-#                 neg_feature.add(row["q_name"])
-
-#     if read_name == '2bcd44d2-ba99-45f5-81f6-72bd25bd1035':
-#         print(f"POS {pos_feature}")
-#         print(f"NEG {neg_feature}")
-
-#     if len(pos_feature) == len(neg_feature):
-#         read_row = results_df[results_df["ReadID"] == read_name]
-#         if float(read_row["MappedEstimatedCopiesPlus"]) > float(read_row["MappedEstimatedCopiesMinus"]):
-#             return pd.Series([True, '+'])
-        
-#         return pd.Series([True, '-'])
-#     elif len(pos_feature) > len(neg_feature):
-#         return pd.Series([True, '+'])
-
-#     return pd.Series([True, '-'])
 
 def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10):
     # Set MultiIndex on ReadID and strand for uniqueness
@@ -342,7 +292,35 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
         # print(results_df.at[(read_name, strand), f"{feature_name}_mapped"])
         # print("----")
 
-        if results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True:
+        # if results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True:
+        if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name != "d4z4_chr4_proximal"):
+            continue
+
+        # To combine fragmented d4z4_chr4_proximal, taking the coordinates that covers the most
+        # For now it's currently only changing the coordinate (not the other components)
+        if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name == "d4z4_chr4_proximal") and (results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"] is not None):
+            # print(results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"])
+            # print(results_df.loc[read_name, :]["d4z4_chr4_proximal_coords"].values[0])
+            # prev_tstart = results_df[results_df["ReadID"] == read_name]["d4z4_chr4_proximal_coords"].values[0].split("-")[0]
+
+            # if (results_df.loc[read_name, :]["d4z4_chr4_proximal_coords"].values[0]) is None:
+            #     continue
+
+            prev_tstart = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[0]
+            prev_tend = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[1]
+
+            # prev_tend = results_df[results_df["ReadID"] == read_name]["d4z4_chr4_proximal_coords"].values[0].split("-")[1]
+
+            prev_tstart = int(prev_tstart)
+            prev_tend = int(prev_tend)
+
+            if prev_tstart < t_start:
+                t_start = prev_tstart
+            if prev_tend > t_end:
+                t_end = prev_tend
+
+            results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{t_start}-{t_end}"
+            
             continue
 
         # Update feature mapping details
@@ -407,7 +385,7 @@ def read_psl(psl_file):
 
     return psl_df
 
-def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, bam_file, fasta_file=None):
+def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, fasta_file=None):
     """
     Parse a PSL file and create a table summarising alignments for each feature per read.
     
@@ -432,7 +410,7 @@ def parse_psl_to_table(psl_file, output_table, bed_file, sslp_file, bam_file, fa
 
     # Ensure all BED reads are in results
     bed_df = read_bed_file(bed_file)
-    results = ensure_all_reads_in_results(results, bed_df, features, lengths_dict)
+    results = initialise_results(results, bed_df, features, lengths_dict)
 
     # Convert results dictionary to a DataFrame
     results_df = pd.DataFrame.from_dict(results, orient="index").reset_index()
@@ -612,7 +590,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Parse PSL to table
-    parse_psl_to_table(
+    read_classification(
         psl_file=args.psl,
         bed_file=args.bed,
         output_table=args.output,
