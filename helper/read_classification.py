@@ -108,7 +108,6 @@ def parse_sslp_bed(sslp_file):
             sslp_dict[read_id] = (coords, length)
     return sslp_dict
 
-
 def find_polyA_coords_and_signal(sequence, start, end):
     """
     Find the polyA signal within a sequence, prioritising ATTAAA and its reverse complement TTTAAT.
@@ -158,28 +157,18 @@ def check_duplex(read_name, psl_df, results_df, COMPLETENESS_THRESHOLD=10):
     Returns:
         boolean
     """
-    # strands = set(psl_df.loc[psl_df["t_name"] == read_name, "strand"])
     strands = set()
     for _, f_row in psl_df.iterrows():
         completeness = round((f_row["matches"] / f_row["q_size"]) * 100, 2)
         if completeness < COMPLETENESS_THRESHOLD:
             continue
 
-        # if f_row["strand"] == '+':
         strands.add(f_row["strand"])
 
-    if read_name == '36b7b008-5ad4-4645-9b22-5dcd109af28d':
-        print("CHECKING DUPLEX READ NAME 36b7b008-5ad4-4645-9b22-5dcd109af28d")
-        print(strands)
-    # if len(strands) == 0:
-    #     print(read_name)
-
     read_row = results_df[results_df["ReadID"] == read_name]
-    if (float(read_row["MappedEstimatedCopiesPlus"]) > 0.00) and (float(read_row["MappedEstimatedCopiesMinus"]) > 0.00):
-        if read_name == '36b7b008-5ad4-4645-9b22-5dcd109af28d':
-            print("CHECKING COPIES 36b7b008-5ad4-4645-9b22-5dcd109af28d")
-            print(read_row["MappedEstimatedCopiesPlus"])
-            print(read_row["MappedEstimatedCopiesMinus"])
+    mapped_estimated_copies_plus = read_row["MappedEstimatedCopiesPlus"].values[0]
+    mapped_estimated_copies_minus = read_row["MappedEstimatedCopiesMinus"].values[0]
+    if (mapped_estimated_copies_plus > 0.00) and (mapped_estimated_copies_minus > 0.00):
         return True
 
     return len(strands) > 1
@@ -271,6 +260,11 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
         read_length = int(row["t_size"])
         strand = row["strand"]
 
+        if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a' and feature_name == "d4z4_chr4_proximal":
+            print("f30f0390-4265-4c0a-a90c-956928fa701a")
+            print(f"completeness {completeness}")
+            # print(feature_name)
+
         # Ensure the read-strand combination exists in results_df
         if (read_name, strand) not in results_df.index:
             continue
@@ -305,10 +299,18 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
             prev_tstart = int(prev_tstart)
             prev_tend = int(prev_tend)
 
+            if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a':
+                print("f30f0390-4265-4c0a-a90c-956928fa701a")
+                print(f"prev {prev_tstart}-{prev_tend}")
+                print(f"curr {t_start}-{t_end}")
+
             if prev_tstart < t_start:
                 t_start = prev_tstart
             if prev_tend > t_end:
                 t_end = prev_tend
+
+            if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a':
+                print(f"Final {t_start}-{t_end}")
 
             results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{t_start}-{t_end}"
             
@@ -394,7 +396,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
     psl_df = read_psl(psl_file)
 
     # List of features to check
-    features = ["d4z4_chr4_proximal", "p13-E11", "pLAM","4qA_probe","4qB_probe"]
+    features = ["d4z4_chr4_proximal", "p13-E11", "pLAM", "4qA_probe", "4qB_probe"]
 
     # Prepare results dictionary
     results = {}
@@ -412,8 +414,9 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
 
     results_df = get_cne(results_df, bam_file)
 
-    if results_df["ReadID"].str.contains("36b7b008-5ad4-4645-9b22-5dcd109af28d").any():
-        print("HELLO")
+    mapped_estimated_copies_column = ['MappedEstimatedCopies', 'MappedEstimatedCopiesPlus', 'MappedEstimatedCopiesMinus']
+    for col in mapped_estimated_copies_column:
+        results_df[col] = pd.to_numeric(results_df[col], errors="coerce")
 
     # results_df[["duplex", "optimal_duplex_strand"]] = results_df.apply(
     #     lambda row: select_strand_if_duplex(row['ReadID'], psl_df, results_df, features), axis=1
@@ -422,8 +425,6 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
     # **Applying process_duplex_row correctly**
     expanded_rows = []
     for _, row in results_df.iterrows():
-        if row["ReadID"] == '36b7b008-5ad4-4645-9b22-5dcd109af28d':
-            print("IT IS HERE")
         expanded_rows.extend(process_duplex_row(row, psl_df, results_df, features))
 
     # Create a new DataFrame
@@ -440,6 +441,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
         p13_mapped = row["p13-E11_mapped"]
         pLAM_mapped = row["pLAM_mapped"]
         q4b_mapped = row["4qB_probe_mapped"]
+        duplex = row["duplex"]
         genome_coords = row.get("GenomeCoords", "NA")  # Default to "NA" if not available
     
         # Check PercentIdentity for q4B
@@ -468,7 +470,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
         elif p13_mapped and (starts_with_chr4 or starts_with_chr10):
             return "Partial proximal Unclassified", "NA"  # Haplotype is NA for this label
         else:
-            # return "no_features", "NA"
+            # Classify no feature reads
             try:
                 # Calculate expected read length based on MappedEstimatedCopies
                 mapped_estimated_copies = float(row.get("MappedEstimatedCopies", 0))  # Default to 0 if missing
@@ -476,7 +478,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
                 actual_length_kb = float(row.get("ReadLength", 0)) / 1000  # Convert ReadLength to kb
 
                 # Compare expected length with actual length (+/- 3.3)
-                if actual_length_kb - 3.3 <= expected_length_kb <= actual_length_kb + 3.3:
+                if (actual_length_kb - 3.3 <= expected_length_kb <= actual_length_kb + 3.3) or duplex:
                     return "Partial internal Unclassified", "NA"
                 else:
                     # ADD if it's partial distal unclassified, if GenomeCoords starts with chr4 then 4qB or chr10 then 10qB
@@ -532,7 +534,8 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
     results_df.fillna("NA", inplace=True)
 
     # Exclude rows with NA in the ReadLabel column
-    results_df["ReadLabel"].fillna("NA", inplace=True)
+    # results_df["ReadLabel"].fillna("NA", inplace=True)
+    results_df["ReadLabel"] = results_df["ReadLabel"].fillna("NA")
 
     # Add a temporary column for custom chromosome sorting
     results_df["ChromosomeOrder"] = results_df["GenomeCoords"].apply(lambda x: 0 if x.startswith("chr4") else 1 if x.startswith("chr10") else 2)
