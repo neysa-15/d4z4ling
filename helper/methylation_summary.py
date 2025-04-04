@@ -18,10 +18,22 @@ def get_distal_d4z4_coords(df):
     if strand == "+":  
         # Get the row with max d4z4_num
         distal_d4z4 = df.loc[df["d4z4_num"].idxmax()]
+
+        # skip small d4z4 copies
+        size = distal_d4z4["BlockSizes"].split(",")[0]
+        if int(size) < 1000 :
+            # If the first block size is 0, use the second largest
+            distal_copy = distal_d4z4["d4z4_num"] - 1
+            distal_d4z4 = df[df["d4z4_num"] == distal_copy].iloc[0] if (df["d4z4_num"] == distal_copy).any() else df.loc[df["d4z4_num"].idxmax()]
     else:  
         # Get d4z4_1, or fallback to min if missing
         distal_d4z4 = df[df["d4z4_num"] == 1].iloc[0] if (df["d4z4_num"] == 1).any() else df.loc[df["d4z4_num"].idxmin()]
-    print(distal_d4z4["d4z4_num"])
+
+        size = distal_d4z4["BlockSizes"].split(",")[0]
+        if int(size) < 1000 :
+            # If the first block size is 0, use the second largest
+            distal_copy = distal_d4z4["d4z4_num"] + 1
+            distal_d4z4 = df[df["d4z4_num"] == distal_copy].iloc[0] if (df["d4z4_num"] == distal_copy).any() else df.loc[df["d4z4_num"].idxmin()]
 
     return distal_d4z4["Start"], distal_d4z4["End"]
 
@@ -38,7 +50,32 @@ def calculate_distal_copy_methylation(idx, summary_df, read_methylation, d4z4_st
 
     return summary_df
 
-def distal_methylation_summary(summary_file, features_file, methylation_file, output_file, updated_bed_file):
+def find_closest_coordinates(features_df, read_id, read_features, target_start, target_end):
+    # If no d4z4 repeat overlaps, find the closest d4z4 repeat
+    if not read_features.empty:
+        read_features["distance"] = read_features.apply(
+            lambda feature_row: min(abs(feature_row["Start"] - target_end), abs(feature_row["End"] - target_start)),
+            axis=1
+        )
+        closest_d4z4 = read_features.loc[read_features["distance"].idxmin()]
+        d4z4_start, d4z4_end = closest_d4z4["Start"], closest_d4z4["End"]
+
+        # Extend the closest d4z4 repeat to include the target coordinates
+        new_d4z4_start = min(d4z4_start, target_start)
+        new_d4z4_end = max(d4z4_end, target_end)
+
+        # Update the features DataFrame
+        features_df.loc[
+            (features_df["ReadID"] == read_id) &
+            (features_df["Start"] == d4z4_start) &
+            (features_df["End"] == d4z4_end),
+            ["Start", "End"]
+        ] = [new_d4z4_start, new_d4z4_end]
+
+        # Update the d4z4 coordinates for CpG calculation
+        return new_d4z4_start, new_d4z4_end
+
+def methylation_summary(summary_file, features_file, methylation_file, output_file, updated_bed_file):
     # Read the files into dataframes
     summary_df = pd.read_csv(summary_file, sep="\t")
     features_df = pd.read_csv(features_file, sep="\t", header=None, names=[
@@ -105,28 +142,7 @@ def distal_methylation_summary(summary_file, features_file, methylation_file, ou
 
                 else:
                     # If no d4z4 repeat overlaps, find the closest d4z4 repeat
-                    if not read_features.empty:
-                        read_features["distance"] = read_features.apply(
-                            lambda feature_row: min(abs(feature_row["Start"] - plam_end), abs(feature_row["End"] - plam_start)),
-                            axis=1
-                        )
-                        closest_d4z4 = read_features.loc[read_features["distance"].idxmin()]
-                        d4z4_start, d4z4_end = closest_d4z4["Start"], closest_d4z4["End"]
-
-                        # Extend the closest d4z4 repeat to include the pLAM coordinates
-                        new_d4z4_start = min(d4z4_start, plam_start)
-                        new_d4z4_end = max(d4z4_end, plam_end)
-
-                        # Update the features DataFrame
-                        features_df.loc[
-                            (features_df["ReadID"] == read_id) &
-                            (features_df["Start"] == d4z4_start) &
-                            (features_df["End"] == d4z4_end),
-                            ["Start", "End"]
-                        ] = [new_d4z4_start, new_d4z4_end]
-
-                        # Update the d4z4 coordinates for CpG calculation
-                        d4z4_start, d4z4_end = new_d4z4_start, new_d4z4_end
+                    d4z4_start, d4z4_end = find_closest_coordinates(features_df, read_id, read_features, plam_start, plam_end)
 
                 summary_df = calculate_distal_copy_methylation(idx, summary_df, read_methylation, d4z4_start, d4z4_end)
 
@@ -137,9 +153,6 @@ def distal_methylation_summary(summary_file, features_file, methylation_file, ou
                 # choose strands, important for duplex reads
                 curr_strand = row["strand"]
                 strand_read_features = read_features[read_features["Strand"] == curr_strand]
-                # print(row["ReadID"], row["ReadLabel"], curr_strand)
-                # Filter out to just the repeats and not the proximal
-                # read_features_repeats = strand_read_features[strand_read_features["Feature"].str.match(r"d4z4_\d+$")]
 
                 # Then take the last copy of the d4z4 repeat
                 # d4z4_{max} if strand is + and d4z4_1 if strand is -
@@ -173,7 +186,7 @@ if __name__ == "__main__":
     output_file = args.output
     updated_bed_file = args.updated_bed
 
-    distal_methylation_summary(summary_file, features_file, methylation_file, output_file, updated_bed_file)
+    methylation_summary(summary_file, features_file, methylation_file, output_file, updated_bed_file)
 
     print(f"Updated main TSV file saved to {output_file}")
     print(f"Updated features BED file saved to {updated_bed_file}")
