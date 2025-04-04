@@ -128,15 +128,6 @@ echo "Converting PSL to BED"
 
 seqkit amplicon --bed -F GGTGGAGTTCTGGTTTCAGC -R CCTGTGCTTCAGAGGCATTTG -m 2 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" > "${OUTDIR}/${PREFIX}_SSLP.bed"
 
-# Step 8: Parse PSL to generate a summary table
-echo "Parsing PSL to generate summary table"
-python3 helper/read_classification.py \
-    --psl "${OUTDIR}/${PREFIX}_mapped_features.psl" \
-    --bed "${OUTDIR}/${PREFIX}_reads_of_interest.bed" \
-    --output "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
-    --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" \
-    --sslp "${OUTDIR}/${PREFIX}_SSLP.bed"
-
 # Step 9: Align reads to haplotype-specific references
 echo "Aligning reads classified to specific haplotypes"
 aligned_bams=()  # Array to collect BAM file paths for merging
@@ -154,7 +145,8 @@ for chrom in chr4 chr10; do
 
     # Extract reads corresponding to the haplotype
     haplotype_reads="${OUTDIR}/${PREFIX}_${haplotype}_reads.fastq"
-    seqtk subseq <(samtools fastq "$INPUT_UBAM") <(grep ${chrom} "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" | cut -f1) > "$haplotype_reads"
+    # seqtk subseq <(samtools fastq "$INPUT_UBAM") <(grep ${chrom} "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" | cut -f1) > "$haplotype_reads"
+    seqtk subseq "$INPUT_FASTQ" <(grep ${chrom} "${OUTDIR}/${PREFIX}_reads_of_interest.bed" | cut -f4 | sort | uniq) > "$haplotype_reads"
 
     # Align reads to the haplotype-specific reference
     aligned_bam="${OUTDIR}/${PREFIX}_${haplotype}_aligned.bam"
@@ -180,15 +172,32 @@ samtools index "$merged_bam"
 # Remove individual haplotype BAM files and their indexes
 rm "${aligned_bams[@]}" "${aligned_bams[@]/%.bam/.bam.bai}"
 
+# Step 8: Parse PSL to generate a summary table
+echo "Parsing PSL to generate summary table"
+python3 helper/read_classification.py \
+    --psl "${OUTDIR}/${PREFIX}_mapped_features.psl" \
+    --bed "${OUTDIR}/${PREFIX}_reads_of_interest.bed" \
+    --output "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
+    --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" \
+    --sslp "${OUTDIR}/${PREFIX}_SSLP.bed" \
+    --aligned-bam "${OUTDIR}/${PREFIX}_aligned_haplotypes.bam"
+
 ## Step 11: get mapped estimated copies
-python3 helper/get_cnv.py --outdir "${OUTDIR}" --prefix "${PREFIX}"
+# python3 helper/get_cne.py --outdir "${OUTDIR}" --prefix "${PREFIX}"
 
 ## Step 12: Generate ordered alignment sequences
 echo "Generating ordered alignment sequences"
 alignment_script="helper/alignment_order.clipping.v3.py"
 
 # Run the alignment order script
-python3 "$alignment_script" --bam "${OUTDIR}/${PREFIX}_aligned_haplotypes.bam" --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" --output_fasta "${OUTDIR}/${PREFIX}_d4z4_units.fasta" --output_table "${OUTDIR}/${PREFIX}_d4z4_units.tsv" --xapi_bed "${OUTDIR}/${PREFIX}_xapi_sites.bed" --blni_bed "${OUTDIR}/${PREFIX}_blni_sites.bed" --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
+python3 "$alignment_script" \
+    --bam "${OUTDIR}/${PREFIX}_aligned_haplotypes.bam" \
+    --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" \
+    --output_fasta "${OUTDIR}/${PREFIX}_d4z4_units.fasta" \
+    --output_table "${OUTDIR}/${PREFIX}_d4z4_units.tsv" \
+    --xapi_bed "${OUTDIR}/${PREFIX}_xapi_sites.bed" \
+    --blni_bed "${OUTDIR}/${PREFIX}_blni_sites.bed" \
+    --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
 
 # Map d4z4 repeats back to the reads of interest
 minimap2 --secondary=no --MD -ax asm5 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_d4z4_units.fasta" | samtools sort -o "${OUTDIR}/${PREFIX}_d4z4_repeats.bam"
@@ -206,6 +215,58 @@ python3 helper/add_colors_to_bed.py \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
     --sslp_bed "${OUTDIR}/${PREFIX}_SSLP.bed" \
     --output_bed "${OUTDIR}/${PREFIX}_all_features.bed"
+
+
+# Extract the read from the uBAM and convert it to FASTQ and FASTA formats abd align the extracted FASTQ back to the FASTA reference (self-mapping)
+samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
+    samtools fastq -TMM,ML - | minimap2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
+    samtools sort -@ ${THREADS} - > "${OUTDIR}/${PREFIX}_meth_reads.bam"
+
+# Index the resulting BAM file
+samtools index "${OUTDIR}/${PREFIX}_meth_reads.bam"
+
+# use minimod to get meth probabilities for each CpG within a given read
+minimod view -c m "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_meth_reads.bam" | awk 'NR > 1 {print $4"\t"$5"\t"$5+1"\t.\t"$7}' > "${OUTDIR}/${PREFIX}_meth_reads.bed"
+
+python3 helper/methylation_summary.py \
+    --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
+    --features_bed "${OUTDIR}/${PREFIX}_all_features.bed" \
+    --meth "${OUTDIR}/${PREFIX}_meth_reads.bed" \
+    --output "${OUTDIR}/${PREFIX}_methylation_summary.tsv" \
+    --updated_bed "${OUTDIR}/${PREFIX}_updated_features.bed"
+
+mv "${OUTDIR}/${PREFIX}_methylation_summary.tsv" "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
+mv "${OUTDIR}/${PREFIX}_updated_features.bed" "${OUTDIR}/${PREFIX}_all_features.bed"
+
+# Check if genome.chrom.sizes exists
+if [ ! -f "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" ]; then
+    echo "Creating ${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes in $OUTDIR..."
+    
+    # Generate .fai index for the reference if it doesn't exist
+    if [ ! -f "${OUTDIR}/${PREFIX}_reads_of_interest.fasta.fai" ]; then
+        samtools faidx "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
+    fi
+
+    # Create genome.chrom.sizes from the .fai index
+    cut -f1,2 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta.fai" > "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes"
+else
+    echo "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes already exists in $OUTDIR."
+fi
+
+# High probability (> 0.75)
+awk '$5 > 0.75 {print $1, $2, $3, $5}' "${OUTDIR}/${PREFIX}_meth_reads.bed" | sort -k1,1 -k2,2n > "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph"
+ ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bw"
+
+# Low probability (< 0.25)
+awk '$5 < 0.25 {print $1, $2, $3, $5}' "${OUTDIR}/${PREFIX}_meth_reads.bed" | sort -k1,1 -k2,2n > "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph"
+ ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bw"
+
+# Undefined (0.25 <= x <= 0.75)
+awk '$5 >= 0.25 && $5 <= 0.75 {print $1, $2, $3, $5}' "${OUTDIR}/${PREFIX}_meth_reads.bed" | sort -k1,1 -k2,2n > "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph"
+ ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bw"
+
+# Remove intermediate files
+rm "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph"
 
 # Remove temp created fastq/ubam
 if [[ $ubam_exist ]]; then
