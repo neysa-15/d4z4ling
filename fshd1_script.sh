@@ -82,8 +82,9 @@ blastn -query ${PROBES} -db ${OUTDIR}/${PREFIX}_db -out ${OUTDIR}/${PREFIX}_prob
 
 echo "MERYL"
 # Define meryl outputs relative to the reference genome directory
-MERYL_DB="${OUTDIR}/merylDB"
-REPETITIVE_REGIONS="${OUTDIR}/repetitive_k15.txt"
+REF_NAME=$(basename $REF .fa)
+MERYL_DB="inputs/merylDB_${REF_NAME}"
+REPETITIVE_REGIONS="inputs/${REF_NAME}_repetitive_k15.txt"
 
 # Step 1: Pre-compute k-mer frequency (only if meryl output does not exist)
 if [ ! -d "$MERYL_DB" ]; then
@@ -93,7 +94,7 @@ else
     echo "Meryl database already exists at $MERYL_DB. Skipping this step."
 fi
 
-# Step 2: Extract repetitive regions (only if repetitive_k15.txt does not exist)
+# Step 2: Extract repetitive regions (only if {refname}_repetitive_k15.txt does not exist)
 if [ ! -f "$REPETITIVE_REGIONS" ]; then
     echo "Extracting repetitive regions..."
     meryl print greater-than distinct=0.9998 "$MERYL_DB" > "$REPETITIVE_REGIONS"
