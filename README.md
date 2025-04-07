@@ -34,7 +34,7 @@ qsub nci_run.sh
 Last line of nci_run.sh should be customed edited depending on the samples
 Required field:
 ```
-./fshd1_new.sh --prefix {PREFIX OF OUTPUT FILES} --outdir {OUTPUT DIRECTORY NAME} --input-ubam {PATH-TO-UBAM-INPUT}
+./fshd1_script.sh --prefix {PREFIX OF OUTPUT FILES} --outdir {OUTPUT DIRECTORY NAME} --input-ubam {PATH-TO-UBAM-INPUT}
 ```
 
 Optional field would be adding these flags (which have default input if not added):
