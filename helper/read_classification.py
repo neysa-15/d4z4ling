@@ -2,7 +2,7 @@ import pandas as pd
 from Bio import SeqIO
 import argparse
 
-from get_cne import get_cne
+from copy_number_estimation import get_cne
 
 # Ensure all reads from the BED file are included in results
 def initialise_results(results, bed_df, features, lengths_dict):
