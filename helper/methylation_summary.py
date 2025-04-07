@@ -105,6 +105,9 @@ def methylation_summary(summary_file, features_file, methylation_file, output_fi
         # Get d4z4 repeat features for this read
         read_features = d4z4_features[d4z4_features["ReadID"] == read_id].copy()
 
+        if read_features.empty:
+            continue
+
         # Count CpG sites overlapping d4z4 repeats
         methylated_d4z4_count = 0
         total_d4z4_cpg_count = 0
@@ -126,6 +129,9 @@ def methylation_summary(summary_file, features_file, methylation_file, output_fi
         summary_df.loc[idx, "d4z4_CpG_Total"] = total_d4z4_cpg_count
         summary_df.loc[idx, "d4z4_CpG_Methylated"] = methylated_d4z4_count
         summary_df.loc[idx, "d4z4_Methylation_Percentage"] = round((methylated_d4z4_count / total_d4z4_cpg_count * 100), 2) if total_d4z4_cpg_count > 0 else 0.0
+
+        # if read_id == "ea060016-69ea-44a9-9ac8-c2ce34195111":
+        #     print(read_features)
 
         # Check if pLAM is available for this read
         if row["pLAM_mapped"]:
