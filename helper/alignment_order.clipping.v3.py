@@ -49,11 +49,11 @@ def update_main_tsv(main_tsv, xapi_counts, blni_counts):
 
             # Get ratio
             if (row["XapI_Sensitive_Repeats"] == 0) and (row["BlnI_Sensitive_Repeats"] == 0):
-                row["XapI_RE_Ratio"] = 0
-                row["BlnI_RE_Ratio"] = 0
+                row["XapI_RE_Ratio_(%)"] = 0
+                row["BlnI_RE_Ratio_(%)"] = 0
             else:
-                row["XapI_RE_Ratio"] = round((row["XapI_Sensitive_Repeats"] / (row["XapI_Sensitive_Repeats"] + row["BlnI_Sensitive_Repeats"])) * 100, 2)
-                row["BlnI_RE_Ratio"] = 100 - row["XapI_RE_Ratio"]
+                row["XapI_RE_Ratio_(%)"] = round((row["XapI_Sensitive_Repeats"] / (row["XapI_Sensitive_Repeats"] + row["BlnI_Sensitive_Repeats"])) * 100, 2)
+                row["BlnI_RE_Ratio_(%)"] = 100 - row["XapI_RE_Ratio_(%)"]
             updated_data.append(row)
 
     # Add new columns to the header
@@ -246,7 +246,7 @@ def extract_aligned_sequence(read_sequence, cigar, query_start):
     return "".join(aligned_sequence)
 
 
-def get_order(read):
+def get_order(read, original_sequence):
     """
     Determine the order of supplementary alignments for the given read, sorted by clipping values.
     """
@@ -256,6 +256,7 @@ def get_order(read):
 
     sa_tag = read.get_tag("SA") if read.has_tag("SA") else None
     alignment_details = []
+
 
     # Add the primary alignment
     primary_strand = "+" if not read.is_reverse else "-"
@@ -272,6 +273,9 @@ def get_order(read):
         "clipping": clipping,
     }
     alignment_details.append(primary)
+    
+    # if read.query_name == "87fb01b1-7ffa-4d27-85bc-a18928227712":
+    #     print(primary)
 
     # Track strands across all alignments
     all_strands = {primary_strand}
@@ -279,6 +283,10 @@ def get_order(read):
     if sa_tag:
         # Parse SA tag: Format -> "chr,start,strand,CIGAR,mapQ,NM;..."
         supplementary_alignments = [sa for sa in sa_tag.split(";") if sa]
+
+        if read.query_name == "87fb01b1-7ffa-4d27-85bc-a18928227712":
+            print(f"SA tag: {sa_tag}")
+            print(f"Supplementary alignments: {supplementary_alignments}")
 
         for alignment in supplementary_alignments:
             alignment_info = alignment.split(",")
@@ -298,6 +306,9 @@ def get_order(read):
                 "clipping": get_clipping(cigar, strand),
             })
 
+    # if read.query_name == "87fb01b1-7ffa-4d27-85bc-a18928227712":
+    #     print(alignment_details)
+
     # Reverse complement if alignments exist on both strands
     both_strands = len(all_strands) > 1
 
@@ -305,7 +316,11 @@ def get_order(read):
     for alignment in alignment_details:
         strand = alignment["strand"]
         sequence_to_use = read.query_sequence
-        if both_strands and strand == "+":
+        if both_strands and strand == "+" and str(Seq(read.query_sequence).reverse_complement()) == original_sequence:
+            # print(f"Warning: Read {read.query_name} has both strands but original sequence is on the + strand.")
+            sequence_to_use = reverse_complement(read.query_sequence)
+        elif both_strands and strand == "-" and read.query_sequence == original_sequence:
+            # print(f"Warning: Read {read.query_name} has both strands but original sequence is on the - strand.")
             sequence_to_use = reverse_complement(read.query_sequence)
         alignment["sequence"] = extract_aligned_sequence(sequence_to_use, alignment["cigar"], 0)
 
@@ -350,7 +365,7 @@ def process_bam(bam_file, read_id, fasta_file, table_file, fasta_out_file,xapi_b
 
         for read in bam.fetch(until_eof=True):
             if read.query_name == read_id and not read.is_supplementary:
-                alignments = get_order(read)
+                alignments = get_order(read, original_sequence)
                 for idx, alignment in enumerate(alignments, 1):
                     aligned_seq = alignment["sequence"]
                     #if read_id == "985408da-8200-4093-8619-b7db02073ad4":
