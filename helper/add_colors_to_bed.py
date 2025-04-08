@@ -14,7 +14,7 @@ def color_d4z4_chr4_proximal(main_tsv, outfile):
         score = row["d4z4_chr4_proximal_score"]
         strand = row["strand"]
         thick_start, thick_end = start, end
-        color = "255,0,0"
+        color = "203, 195, 227"  # Light purple
         block_count, block_sizes, block_starts = 1, f"{int(end) - int(start)},", "0,"
 
         outfile.write("\t".join([chrom, start, end, "d4z4_chr4_proximal", str(score), strand,
@@ -43,8 +43,8 @@ def process_beds(main_tsv, features_bed, repeats_bed, sslp_bed, output_bed):
                 fields = line.strip().split("\t")
                 chrom, start, end, feature_name = fields[:4]
 
-                if feature_name == "d4z4_chr4_proximal":
-                    continue
+                # if feature_name == "d4z4_chr4_proximal":
+                #     continue
 
                 score = fields[4] if len(fields) > 4 else "0"
                 strand = fields[5] if len(fields) > 5 else "+"
@@ -66,6 +66,9 @@ def process_beds(main_tsv, features_bed, repeats_bed, sslp_bed, output_bed):
                 # Extract read ID and repeat index
                 if ":" in name:
                     read_id, repeat_name = name.split(":")
+                    if chrom != read_id:
+                        print(f"Warning: Read ID {read_id} does not match chromosome {chrom}.")
+                        print(fields)
                 else:
                     repeat_name = name
                     read_id = None
@@ -107,9 +110,6 @@ def process_beds(main_tsv, features_bed, repeats_bed, sslp_bed, output_bed):
                 chrom, start, end, name = fields[:4]
                 score = fields[4] if len(fields) > 4 else "0"
                 strand = fields[5] if len(fields) > 5 else "+"
-
-                if strand == "-":
-                    start, end = str(read_length_dict[chrom] - int(end)), str(read_length_dict[chrom] - int(start))
 
                 # Assign magenta color for SSLP entries
                 thick_start, thick_end = start, end
