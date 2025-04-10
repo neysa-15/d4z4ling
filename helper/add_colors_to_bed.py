@@ -60,8 +60,9 @@ def process_beds(main_tsv, features_bed, repeats_bed, sslp_bed, output_bed):
             if line.strip():  # Skip empty lines
                 fields = line.strip().split("\t")
                 chrom, start, end, name = fields[:4]
-                score = fields[4] if len(fields) > 4 else "0"
-                strand = fields[5] if len(fields) > 5 else "+"
+                # score = fields[4] if len(fields) > 4 else "0"
+                # strand = fields[5] if len(fields) > 5 else "+"
+                strand = fields[4] if len(fields) > 4 else "+"
 
                 # Extract read ID and repeat index
                 if ":" in name:
