@@ -3,6 +3,7 @@ import argparse
 
 # Methylation threshold
 methylation_threshold = 0.75
+repeat_threshold = 0.8 * 3300  # 80% of 3300 bp
 
 # Function to get the start and end based on strand
 def get_distal_d4z4_coords(df):
@@ -21,7 +22,7 @@ def get_distal_d4z4_coords(df):
 
         # skip small d4z4 copies
         size = distal_d4z4["BlockSizes"].split(",")[0]
-        if int(size) < 1000 :
+        if int(size) < repeat_threshold:
             # If the first block size is 0, use the second largest
             distal_copy = distal_d4z4["d4z4_num"] - 1
             distal_d4z4 = df[df["d4z4_num"] == distal_copy].iloc[0] if (df["d4z4_num"] == distal_copy).any() else df.loc[df["d4z4_num"].idxmax()]
@@ -30,7 +31,7 @@ def get_distal_d4z4_coords(df):
         distal_d4z4 = df[df["d4z4_num"] == 1].iloc[0] if (df["d4z4_num"] == 1).any() else df.loc[df["d4z4_num"].idxmin()]
 
         size = distal_d4z4["BlockSizes"].split(",")[0]
-        if int(size) < 1000 :
+        if int(size) < repeat_threshold:
             # If the first block size is 0, use the second largest
             distal_copy = distal_d4z4["d4z4_num"] + 1
             distal_d4z4 = df[df["d4z4_num"] == distal_copy].iloc[0] if (df["d4z4_num"] == distal_copy).any() else df.loc[df["d4z4_num"].idxmin()]
