@@ -188,7 +188,7 @@ python3 helper/read_classification.py \
 
 ## Step 12: Generate ordered alignment sequences
 echo "Generating ordered alignment sequences"
-alignment_script="helper/alignment_order.clipping.v3.py"
+alignment_script="helper/alignment_order.clipping.py"
 
 # Run the alignment order script
 python3 "$alignment_script" \
@@ -198,13 +198,14 @@ python3 "$alignment_script" \
     --output_table "${OUTDIR}/${PREFIX}_d4z4_units.tsv" \
     --xapi_bed "${OUTDIR}/${PREFIX}_xapi_sites.bed" \
     --blni_bed "${OUTDIR}/${PREFIX}_blni_sites.bed" \
-    --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
+    --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
+    --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" 
 
 # Map d4z4 repeats back to the reads of interest
-minimap2 --secondary=no --MD -ax asm5 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_d4z4_units.fasta" | samtools sort -o "${OUTDIR}/${PREFIX}_d4z4_repeats.bam"
-samtools index "${OUTDIR}/${PREFIX}_d4z4_repeats.bam"
+# minimap2 --secondary=no --MD -ax asm5 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_d4z4_units.fasta" | samtools sort -o "${OUTDIR}/${PREFIX}_d4z4_repeats.bam"
+# samtools index "${OUTDIR}/${PREFIX}_d4z4_repeats.bam"
 
-bedtools bamtobed -i "${OUTDIR}/${PREFIX}_d4z4_repeats.bam" > "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
+# bedtools bamtobed -i "${OUTDIR}/${PREFIX}_d4z4_repeats.bam" > "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
 
 ########## check if 4a haplotype is long ##############
 ./identify_long_repeats.sh "${OUTDIR}" "${PREFIX}"
@@ -216,7 +217,6 @@ python3 helper/add_colors_to_bed.py \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
     --sslp_bed "${OUTDIR}/${PREFIX}_SSLP.bed" \
     --output_bed "${OUTDIR}/${PREFIX}_all_features.bed"
-
 
 # Extract the read from the uBAM and convert it to FASTQ and FASTA formats abd align the extracted FASTQ back to the FASTA reference (self-mapping)
 samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
