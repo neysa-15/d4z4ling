@@ -194,7 +194,6 @@ alignment_script="helper/alignment_order.clipping.py"
 python3 "$alignment_script" \
     --bam "${OUTDIR}/${PREFIX}_aligned_haplotypes.bam" \
     --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" \
-    --output_fasta "${OUTDIR}/${PREFIX}_d4z4_units.fasta" \
     --output_table "${OUTDIR}/${PREFIX}_d4z4_units.tsv" \
     --xapi_bed "${OUTDIR}/${PREFIX}_xapi_sites.bed" \
     --blni_bed "${OUTDIR}/${PREFIX}_blni_sites.bed" \
@@ -206,6 +205,11 @@ python3 "$alignment_script" \
 # samtools index "${OUTDIR}/${PREFIX}_d4z4_repeats.bam"
 
 # bedtools bamtobed -i "${OUTDIR}/${PREFIX}_d4z4_repeats.bam" > "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
+
+# Flag for gaps and overlaps
+python3 helper/flag_repeats.py \
+    --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
+    --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
 
 ########## check if 4a haplotype is long ##############
 ./identify_long_repeats.sh "${OUTDIR}" "${PREFIX}"
