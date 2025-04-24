@@ -54,6 +54,19 @@ def read_bed_file(bed_file):
     bed_columns = ["chrom", "start", "end", "read_id", "MAPQ", "strand"]
     return pd.read_csv(bed_file, sep="\t", names=bed_columns)
 
+def read_features_bed_file(features_bed):
+    """
+    Reads a BED file containing features and returns a DataFrame.
+    
+    Args:
+        features_bed (str): Path to the features BED file.
+        
+    Returns:
+        pd.DataFrame: DataFrame containing the features BED file data.
+    """
+    features_columns = ["read_id", "start", "end", "feature_name", "MAPQ", "strand"]
+    return pd.read_csv(features_bed, sep="\t", names=features_columns)
+
 def add_bed_info_to_results(results_df, bed_df):
     """
     Adds GenomeCoords, strand, and MAPQ to the results DataFrame from the BED file.
@@ -242,6 +255,149 @@ def process_duplex_row(row, psl_df, results_df, features, COMPLETENESS_THRESHOLD
 
     return [row, row_dupe]  # Returning a list of rows
 
+# def populate_features(psl_df, features_df, results_df, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10):
+#     # Set MultiIndex on ReadID and strand for uniqueness
+#     results_df.set_index(["ReadID", "strand"], inplace=True)
+
+#     for _, row in features_df.iterrows():
+#         read_name = row["read_id"]
+#         feature_name = row["feature_name"]
+#         strand = row["strand"]
+#         start = row["start"]
+#         end = row["end"]
+
+#         # Skip row if 't_start' or 't_end' is NaN
+#         if pd.isna(start) or pd.isna(end):
+#             continue
+
+#         if (read_name, strand) not in results_df.index:
+#             continue
+
+#         #TODO
+#         if feature_name == "pLAM":
+#             continue
+
+#         # Skip if feature_name is not in the list
+#         if feature_name not in features:
+#             continue
+
+#         # if results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True:
+#         if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name != "d4z4_chr4_proximal"):
+#             continue
+
+#         # Update feature mapping details
+#         results_df.at[(read_name, strand), f"{feature_name}_mapped"] = True
+#         results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{start}-{end}"
+
+#         # Handle percent identity for 4qA_probe and 4qB_probe
+#         # if feature_name in ["4qA_probe", "4qB_probe"]:
+#         #     matches = row["matches"]
+#         #     mismatches = row["mismatches"]
+#         #     rep_matches = row["rep_matches"]
+#         #     percent_identity = (matches / (matches + mismatches + rep_matches)) * 100
+#         #     results_df.at[(read_name, strand), f"{feature_name}_percent_identity"] = round(percent_identity, 2)
+
+#     # OLD LOOPS
+#     # MAYBE CHANGE TO JUST PROCESSING PLAM DF
+#     for _, row in psl_df.iterrows():
+#         read_name = row["t_name"]  # Target is the read
+#         feature_name = row["q_name"]  # Query is the feature
+
+#         # Skip row if 't_start' or 't_end' is NaN
+#         if pd.isna(row["t_start"]) or pd.isna(row["t_end"]):
+#             continue
+
+#         t_start, t_end = int(row["t_start"]), int(row["t_end"])
+#         alignment_score = row["matches"] - row["mismatches"] - row["q_gap_bases"] - row["t_gap_bases"]
+#         completeness = round((row["matches"] / row["q_size"]) * 100, 2)  # Feature completeness in percentage
+#         read_length = int(row["t_size"])
+#         strand = row["strand"]
+
+#         if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a' and feature_name == "d4z4_chr4_proximal":
+#             print("f30f0390-4265-4c0a-a90c-956928fa701a")
+#             print(f"completeness {completeness}")
+#             # print(feature_name)
+
+#         # Ensure the read-strand combination exists in results_df
+#         if (read_name, strand) not in results_df.index:
+#             continue
+
+#         # Update ReadLength if not set
+#         if pd.isna(results_df.at[(read_name, strand), "ReadLength"]):
+#             results_df.at[(read_name, strand), "ReadLength"] = read_length
+
+#         # Skip if feature_name is not in the list
+#         if feature_name not in features:
+#             continue
+
+#         # Skip this alignment if completeness is below threshold
+#         if completeness < COMPLETENESS_THRESHOLD:
+#             continue
+
+#         # # If the feature is already mapped, skip to avoid overwriting
+#         # print("FEATURE")
+#         # print(results_df.at[(read_name, strand), f"{feature_name}_mapped"])
+#         # print("----")
+
+#         # if results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True:
+#         if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name != "d4z4_chr4_proximal"):
+#             continue
+
+#         # To combine fragmented d4z4_chr4_proximal, taking the coordinates that covers the most
+#         # For now it's currently only changing the coordinate (not the other components)
+#         if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name == "d4z4_chr4_proximal") and (results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"] is not None):
+#             prev_tstart = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[0]
+#             prev_tend = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[1]
+
+#             prev_tstart = int(prev_tstart)
+#             prev_tend = int(prev_tend)
+
+#             if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a':
+#                 print("f30f0390-4265-4c0a-a90c-956928fa701a")
+#                 print(f"prev {prev_tstart}-{prev_tend}")
+#                 print(f"curr {t_start}-{t_end}")
+
+#             if prev_tstart < t_start:
+#                 t_start = prev_tstart
+#             if prev_tend > t_end:
+#                 t_end = prev_tend
+
+#             if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a':
+#                 print(f"Final {t_start}-{t_end}")
+
+#             results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{t_start}-{t_end}"
+            
+#             continue
+
+#         # Update feature mapping details
+#         results_df.at[(read_name, strand), f"{feature_name}_mapped"] = True
+#         results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{t_start}-{t_end}"
+#         results_df.at[(read_name, strand), f"{feature_name}_score"] = alignment_score
+#         results_df.at[(read_name, strand), f"{feature_name}_completeness"] = completeness
+
+#         # Handle polyA signal for pLAM
+#         if feature_name == "pLAM" and fasta_file:
+#             sequence = sequences_dict.get(read_name, "")
+#             if sequence:
+#                 polyA_coords, polyA_signal = find_polyA_coords_and_signal(sequence, t_start, t_end)
+#                 results_df.at[(read_name, strand), "pLAM_contains_polyA"] = polyA_signal in ["ATTAAA", "TTTAAT"]
+#                 results_df.at[(read_name, strand), "pLAM_polyA_coords"] = polyA_coords
+#                 results_df.at[(read_name, strand), "pLAM_polyA_signal"] = polyA_signal
+#             else:
+#                 results_df.at[(read_name, strand), "pLAM_contains_polyA"] = False
+
+#         # Handle percent identity for 4qA_probe and 4qB_probe
+#         if feature_name in ["4qA_probe", "4qB_probe"]:
+#             matches = row["matches"]
+#             mismatches = row["mismatches"]
+#             rep_matches = row["rep_matches"]
+#             percent_identity = (matches / (matches + mismatches + rep_matches)) * 100
+#             results_df.at[(read_name, strand), f"{feature_name}_percent_identity"] = round(percent_identity, 2)
+
+#     # Reset index before returning
+#     results_df.reset_index(inplace=True)
+#     return results_df
+
 def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10):
     # Set MultiIndex on ReadID and strand for uniqueness
     results_df.set_index(["ReadID", "strand"], inplace=True)
@@ -345,7 +501,6 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
     results_df.reset_index(inplace=True)
     return results_df
 
-
 def read_psl(psl_file):
     """
     Read a PSL file
@@ -405,6 +560,9 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
     bed_df = read_bed_file(bed_file)
     results = initialise_results(results, bed_df, features, lengths_dict)
 
+    # Read features BED file
+    # features_df = read_features_bed_file(features_bed)
+
     # Convert results dictionary to a DataFrame
     results_df = pd.DataFrame.from_dict(results, orient="index").reset_index()
     results_df.rename(columns={"index": "ReadID"}, inplace=True)
@@ -455,17 +613,17 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
         # Determine label and haplotype
         if p13_mapped and pLAM_mapped and starts_with_chr4:
             return "Complete 4qA", "4qA"
-        elif p13_mapped and q4b_mapped and q4b_high_identity and starts_with_chr4:
+        elif p13_mapped and q4b_mapped and q4b_high_identity and starts_with_chr4:  
             return "Complete 4qB", "4qB"
         elif p13_mapped and pLAM_mapped and starts_with_chr10:
             return "Complete 10qA", "10qA"
         elif pLAM_mapped and starts_with_chr4:
             return "Partial distal 4qA", "4qA"
-        elif q4b_mapped and q4b_high_identity and starts_with_chr4:
+        elif q4b_mapped and q4b_high_identity and starts_with_chr4:  
             return "Partial distal 4qB", "4qB"
         elif pLAM_mapped and starts_with_chr10:
             return "Partial distal 10qA", "10qA"
-        elif q4b_mapped and q4b_high_identity and starts_with_chr10:
+        elif q4b_mapped  and q4b_high_identity and starts_with_chr10:  
             return "Partial distal 10qB", "10qB"
         elif p13_mapped and (starts_with_chr4 or starts_with_chr10):
             return "Partial proximal Unclassified", "NA"  # Haplotype is NA for this label
@@ -575,7 +733,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse PSL file and generate a summary table.")
     parser.add_argument("--psl", required=True, help="Path to the PSL file.")
-    parser.add_argument("--bed", required=True, help="Path to the BED file.")
+    parser.add_argument("--bed", required=True, help="Path to the reads of interest BED file.")
     parser.add_argument("--output", required=True, help="Path to the output TSV file.")
     parser.add_argument("--fasta", required=False, help="Path to the FASTA file for polyA signal checking.")
     parser.add_argument("--sslp", help="Path to SSLP BED file.", default=None)
