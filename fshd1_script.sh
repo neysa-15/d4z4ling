@@ -17,6 +17,7 @@ REF=/g/data/kr68/genome/hs1.fa           # Reference genome
 REF_DIR=$(dirname "$REF")
 REGION_BED=inputs/d4z4_region.chm13.bed
 FEATURES_FASTA=inputs/features.v2.fasta
+PLAM_FASTA=inputs/pLAM.fasta
 PROBES=inputs/probes.fasta
 PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
@@ -46,22 +47,6 @@ if [[ (-z "$INPUT_UBAM" || ! -f "$INPUT_UBAM") && (-z "$INPUT_FASTQ" || ! -f "$I
     exit 1
 fi
 
-# Keep the original file
-# if have ubam, convert to fastq
-# if have fastq, convert to ubam
-echo "Convert ubam/fastq to fastq/ubam"
-ubam_exist=false
-fastq_exist=false
-if [[  ( ! -z "$INPUT_UBAM" ) && ( -f "$INPUT_UBAM") ]]; then
-    ubam_exist=true
-    samtools fastq -TMM,ML "$INPUT_UBAM" > "${INPUT_UBAM%.bam}.fastq"
-    INPUT_FASTQ="${INPUT_UBAM%.bam}.fastq"
-elif [[  ( ! -z "$INPUT_FASTQ" ) && ( -f "$INPUT_FASTQ") ]]; then
-    fastq_exist=true
-    samtools import -u -s "$INPUT_FASTQ" -o "${INPUT_FASTQ%.fastq}.bam"
-    INPUT_UBAM="${INPUT_FASTQ%.fastq}.bam"
-fi
-
 # Paths to conversion tools
 PSLTOBED=/g/data/if89/apps/kentutils/0.0/bin/pslToBed
 BG2BW=/g/data/if89/apps/kentutils/0.0/bin/bedGraphToBigWig
@@ -73,6 +58,26 @@ MODE=map-ont
 
 # Create output directory if it doesn't exist
 mkdir -p "$OUTDIR"
+
+# Keep the original file
+# if have ubam, convert to fastq
+# if have fastq, convert to ubam
+echo "Convert ubam/fastq to fastq/ubam"
+ubam_exist=false
+fastq_exist=false
+if [[  ( ! -z "$INPUT_UBAM" ) && ( -f "$INPUT_UBAM") ]]; then
+    ubam_exist=true
+    # INPUT_FASTQ=basename "$INPUT_UBAM" .bam
+    UBAM_BASE=$(basename $INPUT_UBAM)
+    samtools fastq -TMM,ML "$INPUT_UBAM" > "${OUTDIR}/${UBAM_BASE%.bam}.fastq"
+    # samtools fastq -TMM,ML "$INPUT_UBAM" > "${INPUT_UBAM%.bam}.fastq"
+    INPUT_FASTQ="${OUTDIR}/${UBAM_BASE%.bam}.fastq"
+elif [[  ( ! -z "$INPUT_FASTQ" ) && ( -f "$INPUT_FASTQ") ]]; then
+    fastq_exist=true
+    FASTQ_BASE=$(basename $INPUT_FASTQ)
+    samtools import -u -s "$INPUT_FASTQ" -o "${OUTDIR}/${FASTQ_BASE%.fastq}.bam"
+    INPUT_UBAM="${OUTDIR}/${FASTQ_BASE%.fastq}.bam"
+fi
 
 # Identify 4qA & 4qB probes in raw data
 echo "IDENTIFY PROBES"
@@ -119,14 +124,20 @@ samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | c
 echo "Converting BAM to BED"
 bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${PREFIX}_reads_of_interest.bed"
 
-# Map features to reads using BLAT
+#######################################
+###    MAPPING FEATURES TO READS    ###
+#######################################
+
+# Map pLAM to reads using BLAT
 echo "Mapping reads to features using BLAT"
+# blat -t=dna -q=dna -maxIntron=500 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$PLAM_FASTA" "${OUTDIR}/${PREFIX}_mapped_plam.psl"
 blat -t=dna -q=dna -maxIntron=500 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "${OUTDIR}/${PREFIX}_mapped_features.psl"
 
 # Convert PSL to BED
 echo "Converting PSL to BED"
  ${PSLTOBED} "${OUTDIR}/${PREFIX}_mapped_features.psl" "${OUTDIR}/${PREFIX}_mapped_features.bed"
 
+# Map SSLP
 seqkit amplicon --bed -F GGTGGAGTTCTGGTTTCAGC -R CCTGTGCTTCAGAGGCATTTG -m 2 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" > "${OUTDIR}/${PREFIX}_SSLP.bed"
 
 # Step 9: Align reads to haplotype-specific references
@@ -183,6 +194,17 @@ python3 helper/read_classification.py \
     --sslp "${OUTDIR}/${PREFIX}_SSLP.bed" \
     --aligned-bam "${OUTDIR}/${PREFIX}_aligned_haplotypes.bam"
 
+# Step 8: Parse PSL to generate a summary table
+# echo "Parsing PSL to generate summary table"
+# python3 helper/read_classification.v2.py \
+#     --psl "${OUTDIR}/${PREFIX}_mapped_plam.psl" \
+#     --features_bed "${OUTDIR}/${PREFIX}_mapped_features.merged.bed" \
+#     --bed "${OUTDIR}/${PREFIX}_reads_of_interest.bed" \
+#     --output "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
+#     --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" \
+#     --sslp "${OUTDIR}/${PREFIX}_SSLP.bed" \
+#     --aligned-bam "${OUTDIR}/${PREFIX}_aligned_haplotypes.bam"
+
 ## Step 11: get mapped estimated copies
 # python3 helper/get_cne.py --outdir "${OUTDIR}" --prefix "${PREFIX}"
 
@@ -223,9 +245,14 @@ python3 helper/add_colors_to_bed.py \
     --output_bed "${OUTDIR}/${PREFIX}_all_features.bed"
 
 # Extract the read from the uBAM and convert it to FASTQ and FASTA formats abd align the extracted FASTQ back to the FASTA reference (self-mapping)
+# samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
+#     samtools fastq -TMM,ML - | minimap2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
+#     samtools sort -@ ${THREADS} - > "${OUTDIR}/${PREFIX}_meth_reads.bam"
+
 samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
     samtools fastq -TMM,ML - | minimap2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
-    samtools sort -@ ${THREADS} - > "${OUTDIR}/${PREFIX}_meth_reads.bam"
+    samtools view -F 2308 -b - | \
+    samtools sort -@ ${THREADS} - > "${OUTDIR}/${PREFIX}_meth_reads.bam"    
 
 # Index the resulting BAM file
 samtools index "${OUTDIR}/${PREFIX}_meth_reads.bam"
@@ -273,9 +300,13 @@ awk '$5 >= 0.25 && $5 <= 0.75 {print $1, $2, $3, $5}' "${OUTDIR}/${PREFIX}_meth_
 # Remove intermediate files
 rm "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph"
 
+# Create plotly reports
+python3 helper/report_plotly.py \
+    --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
+
 # Remove temp created fastq/ubam
 if [[ $ubam_exist ]]; then
-    rm "${INPUT_UBAM%.bam}.fastq"
+    rm "${INPUT_FASTQ}"
 elif [[ $fastq_exist ]]; then
-    rm "${INPUT_FASTQ%.fastq}.bam"
+    rm "${INPUT_UBAM}"
 fi
