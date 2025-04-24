@@ -35,6 +35,11 @@ def get_distal_d4z4_coords(df):
             # If the first block size is 0, use the second largest
             distal_copy = distal_d4z4["d4z4_num"] + 1
             distal_d4z4 = df[df["d4z4_num"] == distal_copy].iloc[0] if (df["d4z4_num"] == distal_copy).any() else df.loc[df["d4z4_num"].idxmin()]
+     
+    print(df["ReadID"].iloc[1])        
+    if df["ReadID"].iloc[1] == "daff5bb0-60e8-4890-b47a-ac7795d6278f":
+        print("daff5bb0-60e8-4890-b47a-ac7795d6278f")
+        print(distal_d4z4["d4z4_num"])
 
     return distal_d4z4["Start"], distal_d4z4["End"]
 
@@ -156,7 +161,7 @@ def methylation_summary(summary_file, features_file, methylation_file, output_fi
         else:
             ###################################################################################
             # Check if it is partial distal but pLAM not mapping
-            if "distal" in row["ReadLabel"]:
+            if "distal" in row["ReadLabel"] or row["ReadLabel"] == "Complete 4qB":
                 # choose strands, important for duplex reads
                 curr_strand = row["strand"]
                 strand_read_features = read_features[read_features["Strand"] == curr_strand]
