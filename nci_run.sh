@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #PBS -P kr68
 #PBS -q normal
-#PBS -l walltime=01:30:00
+#PBS -l walltime=04:00:00
 #PBS -l ncpus=48
 #PBS -l mem=192GB
 #PBS -l storage=gdata/kr68+gdata/if89+scratch/kr68
@@ -35,10 +35,5 @@ module load meryl/1.4.1
 module load Winnowmap/2.03
 module load kentutils/0.0
 
-# ./methylation_script.sh AS2603_pos AS2603 /g/data/kr68/neysa/uBAM/QGXHXX240243_supmeth_unaligned.bam
+/g/data/kr68/neysa/fshd_pipeline/fshd1_script.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-ubam ${UBAM}
 
-./fshd1_new.sh --prefix AS2603 --outdir AS2603_pos --input-ubam /g/data/kr68/neysa/uBAM/QGXHXX240243_supmeth_unaligned.bam
-# ./fshd1_new.sh --prefix JOUB61166 --outdir JOUB61166_min --input-ubam /g/data/kr68/neysa/uBAM/QGXHXX240242_supmeth_unaligned.bam
-# ./fshd1_new.sh --prefix JURA89 --outdir JURA89 --input-ubam /g/data/kr68/neysa/uBAM/PGAXHX230397_barcode01_supmeth_unaligned.bam
-# ./fshd1_new.sh --prefix R230025 --outdir R230025 --input-ubam /g/data/kr68/neysa/uBAM/QGAXHX230356_barcode10_supmeth_unaligned.bam
-# ./fshd1_new.sh --prefix PS1509 --outdir PS1509 --input-ubam /g/data/kr68/neysa/uBAM/PGAXHX230359_barcode17_supmeth_unaligned.bam
