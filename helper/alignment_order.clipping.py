@@ -261,7 +261,7 @@ def get_order(read, original_sequence):
     return alignment_details
 
 
-def process_bam(bam_file, read_id, fasta_file, table_file, fasta_out_file, xapi_bed, blni_bed, repeats_bed):
+def process_bam(bam_file, read_id, fasta_file, table_file, xapi_bed, blni_bed, repeats_bed):
     """
     Process a BAM file and determine alignment details for a specific read ID,
     outputting aligned sequences to a FASTA file and alignment details to a table file.
@@ -278,7 +278,7 @@ def process_bam(bam_file, read_id, fasta_file, table_file, fasta_out_file, xapi_
     # Detect restriction sites
     restriction_sites = detect_restriction_sites(original_sequence)
 
-    with pysam.AlignmentFile(bam_file, "rb") as bam, open(fasta_out_file, "a") as fasta_out, open(table_file, "a") as table_out, open(xapi_bed, "a") as xapi_bed_out, open(blni_bed, "a") as blni_bed_out, open(repeats_bed, "a") as repeats_bed_out:
+    with pysam.AlignmentFile(bam_file, "rb") as bam, open(table_file, "a") as table_out, open(xapi_bed, "a") as xapi_bed_out, open(blni_bed, "a") as blni_bed_out, open(repeats_bed, "a") as repeats_bed_out:
 
         # Write restriction sites to BED files
         for start, end, orientation in restriction_sites["XapI"]:
@@ -330,7 +330,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract alignment details and sequences from a BAM file.")
     parser.add_argument("--bam", required=True, help="Input BAM file.")
     parser.add_argument("--fasta", required=True, help="Input FASTA file with full reads.")
-    parser.add_argument("--output_fasta", required=True, help="Output FASTA file with extracted alignments.")
     parser.add_argument("--output_table", required=True, help="Output table file with alignment details.")
     parser.add_argument("--xapi_bed", required=True, help="Output BED file for XapI restriction sites.")
     parser.add_argument("--blni_bed", required=True, help="Output BED file for BlnI restriction sites.")
@@ -340,7 +339,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Check for existing output files
-    for file_path in [args.output_fasta, args.output_table, args.repeats_bed]:
+    for file_path in [args.output_table, args.repeats_bed]:
         if os.path.exists(file_path):
             print(f"Output file {file_path} already exists. Deleting it to start fresh.")
             os.remove(file_path)
@@ -358,9 +357,8 @@ if __name__ == "__main__":
     # Process each unique read ID and generate outputs
     for read_id in unique_read_ids:
         #print(f"Processing read ID: {read_id}")
-        process_bam(args.bam, read_id, args.fasta, args.output_table, args.output_fasta,args.xapi_bed, args.blni_bed, args.repeats_bed)
+        process_bam(args.bam, read_id, args.fasta, args.output_table, args.xapi_bed, args.blni_bed, args.repeats_bed)
 
-    print(f"FASTA file generated: {args.output_fasta}")
     print(f"Alignment details table generated: {args.output_table}")
 
     # Count sensitive repeats
