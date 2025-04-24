@@ -60,6 +60,28 @@ def analyse_bed(bed_data):
         }
     return results
 
+def check_re_vs_haplotype(row):
+#    for _, row in df.iterrows():
+    chr = row['GenomeCoords'].split(":")[0]
+    haplotype = row['Haplotype']
+    xapi_ratio = row['XapI_RE_Ratio_(%)']
+    blni_ratio = row['BlnI_RE_Ratio_(%)']
+    copy_number = row['MappedEstimatedCopies']
+
+    # print(type(chr), type(haplotype), type(xapi_ratio), type(blni_ratio))
+
+    if type(haplotype) == float and pd.isna(haplotype):
+        return "NA"  # Skip if haplotype is NaN
+
+    if "4" in haplotype and blni_ratio > 50:
+        print(f"{row['ReadID']} classified as haplotype 4q but blni is higher than xapi, have {copy_number} repeats")
+        return False
+    elif "10" in haplotype and xapi_ratio > 50:
+        print(f"{row['ReadID']} classified as haplotype 10q but xapi is higher than blni, have {copy_number} repeats")
+        return False
+    else:
+        return True
+
 # Merge with main TSV
 def merge_with_main(main_tsv_path, bed_results):
     main_df = pd.read_csv(main_tsv_path, sep='\t')
@@ -72,6 +94,9 @@ def merge_with_main(main_tsv_path, bed_results):
     main_df['overlaps'] = main_df.apply(lambda row: get_val(row['ReadID'], row['strand'], 'overlaps'), axis=1)
     main_df['overlapping_repeats'] = main_df.apply(lambda row: get_val(row['ReadID'], row['strand'], 'overlapping_repeats'), axis=1)
     main_df['overlapping_repeats_coords'] = main_df.apply(lambda row: get_val(row['ReadID'], row['strand'], 'overlapping_repeats_coords'), axis=1)
+
+    # Apply RE vs haplotype check
+    main_df['RE_match'] = main_df.apply(check_re_vs_haplotype, axis=1)
 
     main_df = main_df.astype(str).replace("nan", "NA")
 
