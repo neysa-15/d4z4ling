@@ -110,7 +110,8 @@ fi
 # Run winnowmap alignment
 echo "WINNOWMAP" 
 winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" | \
-        samtools view -L "$REGION_BED" -q ${MAPQ} -Sb | \
+        # samtools view -L "$REGION_BED" -q ${MAPQ} -Sb | \
+        samtools view -L "$REGION_BED" -Sb | \
         samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
 samtools index "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
@@ -228,10 +229,13 @@ python3 "$alignment_script" \
 
 # bedtools bamtobed -i "${OUTDIR}/${PREFIX}_d4z4_repeats.bam" > "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
 
+/g/data/kr68/neysa/fshd_pipeline/helper/hybrid.sh "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${PREFIX}_potential_hybrid.tsv"
+
 # Flag for gaps and overlaps
 python3 helper/flag_repeats.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
-    --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
+    --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
+    --hybrid "${OUTDIR}/${PREFIX}_potential_hybrid.tsv"
 
 ########## check if 4a haplotype is long ##############
 ./identify_long_repeats.sh "${OUTDIR}" "${PREFIX}"
