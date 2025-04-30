@@ -60,10 +60,12 @@ def analyse_bed(bed_data):
         }
     return results
 
-def check_re_vs_haplotype(row):
-#    for _, row in df.iterrows():
-    chr = row['GenomeCoords'].split(":")[0]
+
+
+def check_re_vs_haplotype(row,  re_threshold=0.7, ratio_threshold=50):
     haplotype = row['Haplotype']
+    num_xapi = row['XapI_Sensitive_Repeats']
+    num_blni = row['BlnI_Sensitive_Repeats']
     xapi_ratio = row['XapI_RE_Ratio_(%)']
     blni_ratio = row['BlnI_RE_Ratio_(%)']
     copy_number = row['MappedEstimatedCopies']
@@ -72,18 +74,29 @@ def check_re_vs_haplotype(row):
 
     if type(haplotype) == float and pd.isna(haplotype):
         return "NA"  # Skip if haplotype is NaN
+    
+    flag = []
 
-    if "4" in haplotype and blni_ratio > 50:
+    if "4" in haplotype and blni_ratio > ratio_threshold:
         print(f"{row['ReadID']} classified as haplotype 4q but blni is higher than xapi, have {copy_number} repeats")
-        return False
-    elif "10" in haplotype and xapi_ratio > 50:
+        flag.append("wrong_re")
+    elif "10" in haplotype and xapi_ratio > ratio_threshold:
         print(f"{row['ReadID']} classified as haplotype 10q but xapi is higher than blni, have {copy_number} repeats")
-        return False
-    else:
-        return True
+        flag.append("wrong_re")
+    
+    if copy_number > 4:
+        dynamic_threshold = int(re_threshold * copy_number)
+        if ("4" in haplotype) and (num_xapi < dynamic_threshold):
+            flag.append("low_xapi")
+            print(f"{row['ReadID']} is {haplotype} but only {num_xapi} xapi for {copy_number} repeats")
+        elif ("10" in haplotype) and (num_blni < dynamic_threshold):
+            flag.append("low_blni")
+            print(f"{row['ReadID']} is {haplotype} but only {num_blni} blni for {copy_number} repeats")
+
+    return ", ".join(flag) if flag else "NA"
 
 # Merge with main TSV
-def merge_with_main(main_tsv_path, bed_results):
+def merge_with_main(main_tsv_path, bed_results, hybrid_tsv_path):
     main_df = pd.read_csv(main_tsv_path, sep='\t')
 
     def get_val(read_id, strand, key):
@@ -96,7 +109,35 @@ def merge_with_main(main_tsv_path, bed_results):
     main_df['overlapping_repeats_coords'] = main_df.apply(lambda row: get_val(row['ReadID'], row['strand'], 'overlapping_repeats_coords'), axis=1)
 
     # Apply RE vs haplotype check
-    main_df['RE_match'] = main_df.apply(check_re_vs_haplotype, axis=1)
+    main_df['misclassification_flags'] = main_df.apply(check_re_vs_haplotype, axis=1)
+
+    # Load hybrid tsv misclassification file
+    hybrid_df = pd.read_csv(hybrid_tsv_path, sep=' ', header=None, names=["ReadID", "PrimaryChr", "Supplementary"])
+
+    # Build a mapping of ReadID to sa_flag
+    sa_flag_dict = {}
+    for _, row in hybrid_df.iterrows():
+        read_id = row["ReadID"]
+        primary_chr = row["PrimaryChr"]
+        print(row)
+        print(row["Supplementary"], type(row["Supplementary"]))
+        supp_chr = row["Supplementary"].split(",")[0]  # grab first part of supplementary field
+        sa_flag = f"sa_{primary_chr}_{supp_chr}"
+        sa_flag_dict.setdefault(read_id, []).append(sa_flag)  # in case multiple per read
+
+    # Combine misclassification flags
+    def combine_flags(existing_flag, new_flags):
+        if not new_flags:
+            return existing_flag
+        if existing_flag == "NA":
+            return ", ".join(new_flags)
+        return existing_flag + ", " + ", ".join(new_flags)
+
+    # Apply SA misclassification flags
+    main_df["misclassification_flags"] = main_df.apply(
+        lambda row: combine_flags(row["misclassification_flags"], sa_flag_dict.get(row["ReadID"], [])),
+        axis=1
+    )
 
     main_df = main_df.astype(str).replace("nan", "NA")
 
@@ -108,9 +149,10 @@ if __name__ == "__main__":
 
     parser.add_argument("--main_tsv", required=True, help="Main output TSV file to update flags.")
     parser.add_argument("--repeats_bed", required=True, help="Output BED file for d4z4 repeats.")
+    parser.add_argument("--hybrid", required=True, help="Potential reads with hybrid file.")
 
     args = parser.parse_args()
     
     bed_data = load_bed(args.repeats_bed)
     bed_results = analyse_bed(bed_data)
-    merge_with_main(args.main_tsv, bed_results)
+    merge_with_main(args.main_tsv, bed_results, args.hybrid)
