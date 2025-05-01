@@ -533,6 +533,60 @@ def read_psl(psl_file):
 
     return psl_df
 
+def assign_read_label_and_haplotype(row):
+    p13_mapped = row["p13-E11_mapped"]
+    pLAM_mapped = row["pLAM_mapped"]
+    q4b_mapped = row["4qB_probe_mapped"]
+    duplex = row["duplex"]
+    genome_coords = row.get("GenomeCoords", "NA")  # Default to "NA" if not available
+
+    # Check PercentIdentity for q4B
+    q4b_identity = row.get("4qB_probe_percent_identity", 0)  # Default to 0 if not available
+    q4b_high_identity = q4b_mapped and q4b_identity > 95
+
+    # Check chromosomes
+    starts_with_chr4 = genome_coords.startswith("chr4")
+    starts_with_chr10 = genome_coords.startswith("chr10")
+
+    # Determine label and haplotype
+    if p13_mapped and pLAM_mapped and starts_with_chr4:
+        return "Complete 4qA", "4qA"
+    elif p13_mapped and q4b_mapped and q4b_high_identity and starts_with_chr4:  
+        return "Complete 4qB", "4qB"
+    elif p13_mapped and pLAM_mapped and starts_with_chr10:
+        return "Complete 10qA", "10qA"
+    elif pLAM_mapped and starts_with_chr4:
+        return "Partial distal 4qA", "4qA"
+    elif q4b_mapped and q4b_high_identity and starts_with_chr4:  
+        return "Partial distal 4qB", "4qB"
+    elif pLAM_mapped and starts_with_chr10:
+        return "Partial distal 10qA", "10qA"
+    elif q4b_mapped  and q4b_high_identity and starts_with_chr10:  
+        return "Partial distal 10qB", "10qB"
+    elif p13_mapped and (starts_with_chr4 or starts_with_chr10):
+        return "Partial proximal Unclassified", "NA"  # Haplotype is NA for this label
+    else:
+        # Classify no feature reads
+        try:
+            # Calculate expected read length based on MappedEstimatedCopies
+            mapped_estimated_copies = float(row.get("MappedEstimatedCopies", 0))  # Default to 0 if missing
+            expected_length_kb = mapped_estimated_copies * 3.3  # Convert to kb by multiplying by 3.3
+            actual_length_kb = float(row.get("ReadLength", 0)) / 1000  # Convert ReadLength to kb
+
+            # Compare expected length with actual length (+/- 3.3)
+            if (actual_length_kb - 3.3 <= expected_length_kb <= actual_length_kb + 3.3) or duplex:
+                return "Partial internal Unclassified", "NA"
+            else:
+                # ADD if it's partial distal unclassified, if GenomeCoords starts with chr4 then 4qB or chr10 then 10qB
+                if row["GenomeCoords"].startswith("chr4"):
+                    return "Partial distal 4qB", "4qB"
+                elif row["GenomeCoords"].startswith("chr10"):
+                    return "Partial distal 10qB", "10qB"
+                # print(row["ReadID"], row["ReadLabel"])
+
+        except ValueError as e:
+            print(f"Error processing row {row.get('ReadID', 'Unknown')}: {e}")
+
 def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, fasta_file=None):
     """
     Parse a PSL file and create a table summarising alignments for each feature per read.
@@ -595,62 +649,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
     # Populate features from psl file
     results_df = populate_features(psl_df, results_df, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10)
 
-    def assign_read_label_and_haplotype(row):
-        p13_mapped = row["p13-E11_mapped"]
-        pLAM_mapped = row["pLAM_mapped"]
-        q4b_mapped = row["4qB_probe_mapped"]
-        duplex = row["duplex"]
-        genome_coords = row.get("GenomeCoords", "NA")  # Default to "NA" if not available
-    
-        # Check PercentIdentity for q4B
-        q4b_identity = row.get("4qB_probe_percent_identity", 0)  # Default to 0 if not available
-        q4b_high_identity = q4b_mapped and q4b_identity > 95
-    
-        # Check chromosomes
-        starts_with_chr4 = genome_coords.startswith("chr4")
-        starts_with_chr10 = genome_coords.startswith("chr10")
-
-        # Determine label and haplotype
-        if p13_mapped and pLAM_mapped and starts_with_chr4:
-            return "Complete 4qA", "4qA"
-        elif p13_mapped and q4b_mapped and q4b_high_identity and starts_with_chr4:  
-            return "Complete 4qB", "4qB"
-        elif p13_mapped and pLAM_mapped and starts_with_chr10:
-            return "Complete 10qA", "10qA"
-        elif pLAM_mapped and starts_with_chr4:
-            return "Partial distal 4qA", "4qA"
-        elif q4b_mapped and q4b_high_identity and starts_with_chr4:  
-            return "Partial distal 4qB", "4qB"
-        elif pLAM_mapped and starts_with_chr10:
-            return "Partial distal 10qA", "10qA"
-        elif q4b_mapped  and q4b_high_identity and starts_with_chr10:  
-            return "Partial distal 10qB", "10qB"
-        elif p13_mapped and (starts_with_chr4 or starts_with_chr10):
-            return "Partial proximal Unclassified", "NA"  # Haplotype is NA for this label
-        else:
-            # Classify no feature reads
-            try:
-                # Calculate expected read length based on MappedEstimatedCopies
-                mapped_estimated_copies = float(row.get("MappedEstimatedCopies", 0))  # Default to 0 if missing
-                expected_length_kb = mapped_estimated_copies * 3.3  # Convert to kb by multiplying by 3.3
-                actual_length_kb = float(row.get("ReadLength", 0)) / 1000  # Convert ReadLength to kb
-
-                # Compare expected length with actual length (+/- 3.3)
-                if (actual_length_kb - 3.3 <= expected_length_kb <= actual_length_kb + 3.3) or duplex:
-                    return "Partial internal Unclassified", "NA"
-                else:
-                    # ADD if it's partial distal unclassified, if GenomeCoords starts with chr4 then 4qB or chr10 then 10qB
-                    if row["GenomeCoords"].startswith("chr4"):
-                        return "Partial distal 4qB", "4qB"
-                    elif row["GenomeCoords"].startswith("chr10"):
-                        return "Partial distal 10qB", "10qB"
-                    # print(row["ReadID"], row["ReadLabel"])
-
-            except ValueError as e:
-                print(f"Error processing row {row.get('ReadID', 'Unknown')}: {e}")
-
     # Apply the updated function to assign both ReadLabel and Haplotype
-    # print(results_df.apply(lambda row: pd.Series(assign_read_label_and_haplotype(row)), axis=1).head())
     results_df[["ReadLabel", "Haplotype"]] = results_df.apply(
         lambda row: pd.Series(assign_read_label_and_haplotype(row)), axis=1
     )
