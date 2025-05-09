@@ -75,7 +75,6 @@ winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" | \
 samtools index "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
 samtools fasta "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
-
 samtools faidx "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
 
 # Convert BAM to BED
@@ -147,7 +146,7 @@ python3 /g/data/kr68/neysa/fshd_pipeline/helper/read_classification.py \
 
 ## Step 12: Generate ordered alignment sequences
 echo "Generating ordered alignment sequences"
-alignment_script="/g/data/kr68/neysa/fshd_pipeline/helper/alignment_order.clipping.py"
+alignment_script="/g/data/kr68/neysa/fshd_pipeline/helper/alignment_order_clipping.py"
 
 # Run the alignment order script
 python3 "$alignment_script" \

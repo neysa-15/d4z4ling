@@ -211,7 +211,7 @@ python3 helper/read_classification.py \
 
 ## Step 12: Generate ordered alignment sequences
 echo "Generating ordered alignment sequences"
-alignment_script="helper/alignment_order.clipping.py"
+alignment_script="helper/alignment_order_clipping.py"
 
 # Run the alignment order script
 python3 "$alignment_script" \
