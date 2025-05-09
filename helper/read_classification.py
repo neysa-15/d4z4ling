@@ -566,26 +566,27 @@ def assign_read_label_and_haplotype(row):
     elif p13_mapped and (starts_with_chr4 or starts_with_chr10):
         return "Partial proximal Unclassified", "NA"  # Haplotype is NA for this label
     else:
+        return "Partial internal Unclassified", "NA"
         # Classify no feature reads
-        try:
-            # Calculate expected read length based on MappedEstimatedCopies
-            mapped_estimated_copies = float(row.get("MappedEstimatedCopies", 0))  # Default to 0 if missing
-            expected_length_kb = mapped_estimated_copies * 3.3  # Convert to kb by multiplying by 3.3
-            actual_length_kb = float(row.get("ReadLength", 0)) / 1000  # Convert ReadLength to kb
+        # try:
+        #     # Calculate expected read length based on MappedEstimatedCopies
+        #     mapped_estimated_copies = float(row.get("MappedEstimatedCopies", 0))  # Default to 0 if missing
+        #     expected_length_kb = mapped_estimated_copies * 3.3  # Convert to kb by multiplying by 3.3
+        #     actual_length_kb = float(row.get("ReadLength", 0)) / 1000  # Convert ReadLength to kb
 
-            # Compare expected length with actual length (+/- 3.3)
-            if (actual_length_kb - 3.3 <= expected_length_kb <= actual_length_kb + 3.3) or duplex:
-                return "Partial internal Unclassified", "NA"
-            else:
-                # ADD if it's partial distal unclassified, if GenomeCoords starts with chr4 then 4qB or chr10 then 10qB
-                if row["GenomeCoords"].startswith("chr4"):
-                    return "Partial distal 4qB", "4qB"
-                elif row["GenomeCoords"].startswith("chr10"):
-                    return "Partial distal 10qB", "10qB"
-                # print(row["ReadID"], row["ReadLabel"])
+        #     # Compare expected length with actual length (+/- 3.3)
+        #     if (actual_length_kb - 3.3 <= expected_length_kb <= actual_length_kb + 3.3) or duplex:
+        #         return "Partial internal Unclassified", "NA"
+        #     else:
+        #         # ADD if it's partial distal unclassified, if GenomeCoords starts with chr4 then 4qB or chr10 then 10qB
+        #         if row["GenomeCoords"].startswith("chr4"):
+        #             return "Partial distal 4qB", "4qB"
+        #         elif row["GenomeCoords"].startswith("chr10"):
+        #             return "Partial distal 10qB", "10qB"
+        #         # print(row["ReadID"], row["ReadLabel"])
 
-        except ValueError as e:
-            print(f"Error processing row {row.get('ReadID', 'Unknown')}: {e}")
+        # except ValueError as e:
+        #     print(f"Error processing row {row.get('ReadID', 'Unknown')}: {e}")
 
 def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, fasta_file=None):
     """

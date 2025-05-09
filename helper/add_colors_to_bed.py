@@ -82,7 +82,7 @@ def process_beds(main_tsv, features_bed, repeats_bed, sslp_bed, output_bed):
                     # Generate BED12 fields
                     thick_start, thick_end = start, end
                     block_count, block_sizes, block_starts = 1, f"{int(end) - int(start)},", "0,"
-                    outfile.write("\t".join([chrom, start, end, repeat_name, score, strand,
+                    outfile.write("\t".join([chrom, start, end, repeat_name, ".", strand,
                                              thick_start, thick_end, color, str(block_count),
                                              block_sizes, block_starts]) + "\n")
 
