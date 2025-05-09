@@ -14,7 +14,7 @@ export BLASTDB_LMDB_MAP_SIZE=200000000
 INPUT_UBAM=""                            # Unaligned BAM
 INPUT_FASTQ=""
 REF=/g/data/kr68/genome/hs1.fa           # Reference genome
-REF_DIR=$(dirname "$REF")
+# REF_DIR=$(dirname "$REF")
 REGION_BED=inputs/d4z4_region.chm13.bed
 FEATURES_FASTA=inputs/features.v2.fasta
 PLAM_FASTA=inputs/pLAM.fasta
@@ -221,7 +221,7 @@ python3 "$alignment_script" \
     --xapi_bed "${OUTDIR}/${PREFIX}_xapi_sites.bed" \
     --blni_bed "${OUTDIR}/${PREFIX}_blni_sites.bed" \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
-    --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" 
+    --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
 
 # Map d4z4 repeats back to the reads of interest
 # minimap2 --secondary=no --MD -ax asm5 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_d4z4_units.fasta" | samtools sort -o "${OUTDIR}/${PREFIX}_d4z4_repeats.bam"
@@ -235,7 +235,8 @@ python3 "$alignment_script" \
 python3 helper/flag_repeats.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
-    --hybrid "${OUTDIR}/${PREFIX}_potential_hybrid.tsv"
+    --hybrid "${OUTDIR}/${PREFIX}_potential_hybrid.tsv" \
+    --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
 
 ########## check if 4a haplotype is long ##############
 ./identify_long_repeats.sh "${OUTDIR}" "${PREFIX}"
