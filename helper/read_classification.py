@@ -115,12 +115,38 @@ def parse_sslp_bed(sslp_file):
             cols = line.strip().split("\t")
             read_id = cols[0]
             start, end = int(cols[1]), int(cols[2])
+            strand = cols[5]
             sequence = cols[6]
             coords = f"{start}-{end}"
             length = len(sequence)
-            sslp_dict[read_id] = (coords, length)
+            sslp_dict[(read_id, strand)] = (coords, length)
     return sslp_dict
 
+def get_sslp_coords(sslp_file, results_df):
+
+    sslp_data = parse_sslp_bed(sslp_file)
+
+    # Parse the SSLP BED file if provided
+    sslp_data = {}
+    if sslp_file:
+        print(f"Parsing SSLP BED file: {sslp_file}")
+        sslp_data = parse_sslp_bed(sslp_file)
+
+    # Add SSLP_coords and SSLP_length columns
+    if sslp_data:
+        # Add SSLP_coords and SSLP_length columns by matching on (ReadID, Strand)
+        results_df["SSLP_coords"] = results_df.apply(
+            lambda row: sslp_data.get((row["ReadID"], row["strand"]), ("NA", "NA"))[0], axis=1
+        )
+        results_df["SSLP_length"] = results_df.apply(
+            lambda row: sslp_data.get((row["ReadID"], row["strand"]), ("NA", "NA"))[1], axis=1
+        )
+
+    print(f"SSLP dict keys: {list(sslp_data.keys())[:5]}")
+    print(results_df[["ReadID", "strand"]].head())
+
+    return sslp_data, results_df
+ 
 def find_polyA_coords_and_signal(sequence, start, end):
     """
     Find the polyA signal within a sequence, prioritising ATTAAA and its reverse complement TTTAAT.
@@ -658,13 +684,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
     # Parse the SSLP BED file if provided
     sslp_data = {}
     if sslp_file:
-        print(f"Parsing SSLP BED file: {sslp_file}")
-        sslp_data = parse_sslp_bed(sslp_file)
-
-    # Add SSLP_coords and SSLP_length columns
-    if sslp_data:
-        results_df["SSLP_coords"] = results_df["ReadID"].map(lambda x: sslp_data.get(x, ("NA", "NA"))[0])
-        results_df["SSLP_length"] = results_df["ReadID"].map(lambda x: sslp_data.get(x, ("NA", "NA"))[1])
+        sslp_data, results_df = get_sslp_coords(sslp_file, results_df)
  
     # Rearrange columns in the desired order
     columns = ["ReadID","GenomeCoords", "AlignmentLength", "strand", "MAPQ","ReadLength", "ReadLabel", "Haplotype", "duplex", "optimal_duplex_strand"]
