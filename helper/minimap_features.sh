@@ -1,21 +1,16 @@
 #!/bin/bash -l
 
-# OUTDIR=/g/data/kr68/fshd/AS2603
-# PREFIX=AS2603
-
 OUTDIR=$1
 PREFIX=$2
+READS=$3
 
 FEATURES_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/features.fasta
 PLAM_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/pLAM.fasta
 SEQ_4QB=/g/data/kr68/neysa/fshd_pipeline/inputs/4qB_rc.fa
 
-# READS="${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
-READS=$3
-
-# module load minimap2
-# module load samtools
-# module load bedtools
+# module load minimap2/2.22
+# module load samtools/1.19
+# module load bedtools/2.28.0
 
 mkdir -p tmp_bams
 
