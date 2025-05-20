@@ -8,7 +8,7 @@
 #PBS -l wd
 
 # Set LMDB memory size for BLAST
-export BLASTDB_LMDB_MAP_SIZE=200000000
+# export BLASTDB_LMDB_MAP_SIZE=200000000
 
 # Default inputs
 INPUT_UBAM=""                            # Unaligned BAM
@@ -16,7 +16,7 @@ INPUT_FASTQ=""
 REF=/g/data/kr68/genome/hs1.fa           # Reference genome
 # REF_DIR=$(dirname "$REF")
 REGION_BED=inputs/d4z4_region.chm13.bed
-FEATURES_FASTA=inputs/features.v2.fasta
+FEATURES_FASTA=inputs/features.fasta
 PLAM_FASTA=inputs/pLAM.fasta
 PROBES=inputs/probes.fasta
 PREFIX="SAMPLE"
@@ -80,10 +80,10 @@ elif [[  ( ! -z "$INPUT_FASTQ" ) && ( -f "$INPUT_FASTQ") ]]; then
 fi
 
 # Identify 4qA & 4qB probes in raw data
-echo "IDENTIFY PROBES"
-samtools fasta ${INPUT_UBAM} > ${OUTDIR}/${PREFIX}_all_reads_uBAM.fasta
-makeblastdb -in ${OUTDIR}/${PREFIX}_all_reads_uBAM.fasta -dbtype nucl -out ${OUTDIR}/${PREFIX}_db
-blastn -query ${PROBES} -db ${OUTDIR}/${PREFIX}_db -out ${OUTDIR}/${PREFIX}_probes.blast.txt -outfmt 6
+# echo "IDENTIFY PROBES"
+# samtools fasta ${INPUT_UBAM} > ${OUTDIR}/${PREFIX}_all_reads_uBAM.fasta
+# makeblastdb -in ${OUTDIR}/${PREFIX}_all_reads_uBAM.fasta -dbtype nucl -out ${OUTDIR}/${PREFIX}_db
+# blastn -query ${PROBES} -db ${OUTDIR}/${PREFIX}_db -out ${OUTDIR}/${PREFIX}_probes.blast.txt -outfmt 6
 
 echo "MERYL"
 # Define meryl outputs relative to the reference genome directory
@@ -129,10 +129,13 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${
 ###    MAPPING FEATURES TO READS    ###
 #######################################
 
+# map features
+/g/data/kr68/neysa/fshd_pipeline/helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
+
 # Map pLAM to reads using BLAT
-echo "Mapping reads to features using BLAT"
-# blat -t=dna -q=dna -maxIntron=500 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$PLAM_FASTA" "${OUTDIR}/${PREFIX}_mapped_plam.psl"
-blat -t=dna -q=dna -maxIntron=500 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "${OUTDIR}/${PREFIX}_mapped_features.psl"
+# echo "Mapping reads to features using BLAT"
+# # blat -t=dna -q=dna -maxIntron=500 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$PLAM_FASTA" "${OUTDIR}/${PREFIX}_mapped_plam.psl"
+# blat -t=dna -q=dna -maxIntron=500 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "${OUTDIR}/${PREFIX}_mapped_features.psl"
 
 # Convert PSL to BED
 echo "Converting PSL to BED"
@@ -194,20 +197,6 @@ python3 helper/read_classification.py \
     --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" \
     --sslp "${OUTDIR}/${PREFIX}_SSLP.bed" \
     --aligned-bam "${OUTDIR}/${PREFIX}_aligned_haplotypes.bam"
-
-# Step 8: Parse PSL to generate a summary table
-# echo "Parsing PSL to generate summary table"
-# python3 helper/read_classification.v2.py \
-#     --psl "${OUTDIR}/${PREFIX}_mapped_plam.psl" \
-#     --features_bed "${OUTDIR}/${PREFIX}_mapped_features.merged.bed" \
-#     --bed "${OUTDIR}/${PREFIX}_reads_of_interest.bed" \
-#     --output "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
-#     --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" \
-#     --sslp "${OUTDIR}/${PREFIX}_SSLP.bed" \
-#     --aligned-bam "${OUTDIR}/${PREFIX}_aligned_haplotypes.bam"
-
-## Step 11: get mapped estimated copies
-# python3 helper/get_cne.py --outdir "${OUTDIR}" --prefix "${PREFIX}"
 
 ## Step 12: Generate ordered alignment sequences
 echo "Generating ordered alignment sequences"
