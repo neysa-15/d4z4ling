@@ -262,7 +262,7 @@ python3 helper/methylation_summary.py \
     --updated_bed "${OUTDIR}/${PREFIX}_updated_features.bed"
 
 mv "${OUTDIR}/${PREFIX}_methylation_summary.tsv" "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
-mv "${OUTDIR}/${PREFIX}_updated_features.bed" "${OUTDIR}/${PREFIX}_all_features.bed"
+# mv "${OUTDIR}/${PREFIX}_updated_features.bed" "${OUTDIR}/${PREFIX}_all_features.bed"
 
 # Check if genome.chrom.sizes exists
 if [ ! -f "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" ]; then
