@@ -69,7 +69,7 @@ seqtk seq -F 'I' "${INPUT_FASTA}" > "${INPUT_FASTQ}"
 # Run winnowmap alignment
 echo "WINNOWMAP" 
 winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" | \
-        samtools view -L "$REGION_BED" -q ${MAPQ} -Sb | \
+        samtools view -L "$REGION_BED" -Sb | \
         samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
 samtools index "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
@@ -157,20 +157,6 @@ python3 "$alignment_script" \
     --blni_bed "${OUTDIR}/${PREFIX}_blni_sites.bed" \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" 
-
-# sort "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" | uniq | awk -v OFS='\t' '
-# {
-#     if ($1 != prev) {
-#         count=1
-#         prev=$1
-#     } else {
-#         count++
-#     }
-#     $4=$4""count
-#     print
-# }' > "${OUTDIR}/${PREFIX}_d4z4_repeats_annotated.bed"
-
-# mv "${OUTDIR}/${PREFIX}_d4z4_repeats_annotated.bed" "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
 
 # Unify features and repeats into a single bed and add colour
 python3 /g/data/kr68/neysa/fshd_pipeline/helper/add_colors_to_bed.py \
