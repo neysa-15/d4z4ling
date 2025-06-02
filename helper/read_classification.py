@@ -19,6 +19,8 @@ def initialise_results(results, bed_df, features, lengths_dict):
             results[read_id]["ReadLength"] = lengths_dict.get(read_id, "NA")
             results[read_id]["4qA_probe_percent_identity"] = "NA"
             results[read_id]["4qB_probe_percent_identity"] = "NA"
+            results[read_id]["4qA_marker_percent_identity"] = "NA"
+            results[read_id]["4qB_marker_percent_identity"] = "NA"
             results[read_id]["duplex"] = False
             results[read_id]["optimal_duplex_strand"] = None
     return results
@@ -229,11 +231,6 @@ def process_duplex_row(row, psl_df, results_df, features, COMPLETENESS_THRESHOLD
     read_name = row["ReadID"]
     filtered_df = psl_df.loc[psl_df["t_name"] == read_name]
 
-    # if filtered_df.empty:
-    #     row["duplex"] = False
-    #     row["optimal duplex strand"] = None
-    #     return [row]
-
     is_duplex = check_duplex(read_name, filtered_df, results_df)
 
     if not is_duplex:
@@ -276,153 +273,11 @@ def process_duplex_row(row, psl_df, results_df, features, COMPLETENESS_THRESHOLD
 
     row_dupe = row.copy()
     row_dupe["strand"] = '+' if optimal_strand == '-' else '-'
+    row_dupe["MappedEstimatedCopies"] = row_dupe["MappedEstimatedCopiesPlus"] if optimal_strand == '-' else row_dupe["MappedEstimatedCopiesMinus"]
 
     print(row["ReadID"], row["strand"], row["duplex"], row["optimal_duplex_strand"])
 
     return [row, row_dupe]  # Returning a list of rows
-
-# def populate_features(psl_df, features_df, results_df, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10):
-#     # Set MultiIndex on ReadID and strand for uniqueness
-#     results_df.set_index(["ReadID", "strand"], inplace=True)
-
-#     for _, row in features_df.iterrows():
-#         read_name = row["read_id"]
-#         feature_name = row["feature_name"]
-#         strand = row["strand"]
-#         start = row["start"]
-#         end = row["end"]
-
-#         # Skip row if 't_start' or 't_end' is NaN
-#         if pd.isna(start) or pd.isna(end):
-#             continue
-
-#         if (read_name, strand) not in results_df.index:
-#             continue
-
-#         #TODO
-#         if feature_name == "pLAM":
-#             continue
-
-#         # Skip if feature_name is not in the list
-#         if feature_name not in features:
-#             continue
-
-#         # if results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True:
-#         if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name != "d4z4_chr4_proximal"):
-#             continue
-
-#         # Update feature mapping details
-#         results_df.at[(read_name, strand), f"{feature_name}_mapped"] = True
-#         results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{start}-{end}"
-
-#         # Handle percent identity for 4qA_probe and 4qB_probe
-#         # if feature_name in ["4qA_probe", "4qB_probe"]:
-#         #     matches = row["matches"]
-#         #     mismatches = row["mismatches"]
-#         #     rep_matches = row["rep_matches"]
-#         #     percent_identity = (matches / (matches + mismatches + rep_matches)) * 100
-#         #     results_df.at[(read_name, strand), f"{feature_name}_percent_identity"] = round(percent_identity, 2)
-
-#     # OLD LOOPS
-#     # MAYBE CHANGE TO JUST PROCESSING PLAM DF
-#     for _, row in psl_df.iterrows():
-#         read_name = row["t_name"]  # Target is the read
-#         feature_name = row["q_name"]  # Query is the feature
-
-#         # Skip row if 't_start' or 't_end' is NaN
-#         if pd.isna(row["t_start"]) or pd.isna(row["t_end"]):
-#             continue
-
-#         t_start, t_end = int(row["t_start"]), int(row["t_end"])
-#         alignment_score = row["matches"] - row["mismatches"] - row["q_gap_bases"] - row["t_gap_bases"]
-#         completeness = round((row["matches"] / row["q_size"]) * 100, 2)  # Feature completeness in percentage
-#         read_length = int(row["t_size"])
-#         strand = row["strand"]
-
-#         if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a' and feature_name == "d4z4_chr4_proximal":
-#             print("f30f0390-4265-4c0a-a90c-956928fa701a")
-#             print(f"completeness {completeness}")
-#             # print(feature_name)
-
-#         # Ensure the read-strand combination exists in results_df
-#         if (read_name, strand) not in results_df.index:
-#             continue
-
-#         # Update ReadLength if not set
-#         if pd.isna(results_df.at[(read_name, strand), "ReadLength"]):
-#             results_df.at[(read_name, strand), "ReadLength"] = read_length
-
-#         # Skip if feature_name is not in the list
-#         if feature_name not in features:
-#             continue
-
-#         # Skip this alignment if completeness is below threshold
-#         if completeness < COMPLETENESS_THRESHOLD:
-#             continue
-
-#         # # If the feature is already mapped, skip to avoid overwriting
-#         # print("FEATURE")
-#         # print(results_df.at[(read_name, strand), f"{feature_name}_mapped"])
-#         # print("----")
-
-#         # if results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True:
-#         if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name != "d4z4_chr4_proximal"):
-#             continue
-
-#         # To combine fragmented d4z4_chr4_proximal, taking the coordinates that covers the most
-#         # For now it's currently only changing the coordinate (not the other components)
-#         if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name == "d4z4_chr4_proximal") and (results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"] is not None):
-#             prev_tstart = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[0]
-#             prev_tend = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[1]
-
-#             prev_tstart = int(prev_tstart)
-#             prev_tend = int(prev_tend)
-
-#             if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a':
-#                 print("f30f0390-4265-4c0a-a90c-956928fa701a")
-#                 print(f"prev {prev_tstart}-{prev_tend}")
-#                 print(f"curr {t_start}-{t_end}")
-
-#             if prev_tstart < t_start:
-#                 t_start = prev_tstart
-#             if prev_tend > t_end:
-#                 t_end = prev_tend
-
-#             if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a':
-#                 print(f"Final {t_start}-{t_end}")
-
-#             results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{t_start}-{t_end}"
-            
-#             continue
-
-#         # Update feature mapping details
-#         results_df.at[(read_name, strand), f"{feature_name}_mapped"] = True
-#         results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{t_start}-{t_end}"
-#         results_df.at[(read_name, strand), f"{feature_name}_score"] = alignment_score
-#         results_df.at[(read_name, strand), f"{feature_name}_completeness"] = completeness
-
-#         # Handle polyA signal for pLAM
-#         if feature_name == "pLAM" and fasta_file:
-#             sequence = sequences_dict.get(read_name, "")
-#             if sequence:
-#                 polyA_coords, polyA_signal = find_polyA_coords_and_signal(sequence, t_start, t_end)
-#                 results_df.at[(read_name, strand), "pLAM_contains_polyA"] = polyA_signal in ["ATTAAA", "TTTAAT"]
-#                 results_df.at[(read_name, strand), "pLAM_polyA_coords"] = polyA_coords
-#                 results_df.at[(read_name, strand), "pLAM_polyA_signal"] = polyA_signal
-#             else:
-#                 results_df.at[(read_name, strand), "pLAM_contains_polyA"] = False
-
-#         # Handle percent identity for 4qA_probe and 4qB_probe
-#         if feature_name in ["4qA_probe", "4qB_probe"]:
-#             matches = row["matches"]
-#             mismatches = row["mismatches"]
-#             rep_matches = row["rep_matches"]
-#             percent_identity = (matches / (matches + mismatches + rep_matches)) * 100
-#             results_df.at[(read_name, strand), f"{feature_name}_percent_identity"] = round(percent_identity, 2)
-
-#     # Reset index before returning
-#     results_df.reset_index(inplace=True)
-#     return results_df
 
 def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10):
     # Set MultiIndex on ReadID and strand for uniqueness
@@ -463,11 +318,6 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
         if completeness < COMPLETENESS_THRESHOLD:
             continue
 
-        # # If the feature is already mapped, skip to avoid overwriting
-        # print("FEATURE")
-        # print(results_df.at[(read_name, strand), f"{feature_name}_mapped"])
-        # print("----")
-
         # if results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True:
         if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name != "d4z4_chr4_proximal"):
             continue
@@ -481,18 +331,10 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
             prev_tstart = int(prev_tstart)
             prev_tend = int(prev_tend)
 
-            if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a':
-                print("f30f0390-4265-4c0a-a90c-956928fa701a")
-                print(f"prev {prev_tstart}-{prev_tend}")
-                print(f"curr {t_start}-{t_end}")
-
             if prev_tstart < t_start:
                 t_start = prev_tstart
             if prev_tend > t_end:
                 t_end = prev_tend
-
-            if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a':
-                print(f"Final {t_start}-{t_end}")
 
             results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{t_start}-{t_end}"
             
@@ -516,7 +358,7 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
                 results_df.at[(read_name, strand), "pLAM_contains_polyA"] = False
 
         # Handle percent identity for 4qA_probe and 4qB_probe
-        if feature_name in ["4qA_probe", "4qB_probe"]:
+        if feature_name in ["4qA_probe", "4qB_probe", "4qA_marker", "4qB_marker"]:
             matches = row["matches"]
             mismatches = row["mismatches"]
             rep_matches = row["rep_matches"]
@@ -563,12 +405,17 @@ def assign_read_label_and_haplotype(row):
     p13_mapped = row["p13-E11_mapped"]
     pLAM_mapped = row["pLAM_mapped"]
     q4b_mapped = row["4qB_probe_mapped"]
+    q4b_marker_mapped = row["4qB_marker_mapped"]
     duplex = row["duplex"]
     genome_coords = row.get("GenomeCoords", "NA")  # Default to "NA" if not available
 
     # Check PercentIdentity for q4B
     q4b_identity = row.get("4qB_probe_percent_identity", 0)  # Default to 0 if not available
     q4b_high_identity = q4b_mapped and q4b_identity > 95
+
+    # Check PercentIdentity for q4B marker
+    q4b_marker_identity = row.get("4qB_marker_percent_identity", 0)  # Default to 0 if not available
+    q4b_marker_high_identity = q4b_marker_mapped and q4b_marker_identity > 95
 
     # Check chromosomes
     starts_with_chr4 = genome_coords.startswith("chr4")
@@ -585,34 +432,18 @@ def assign_read_label_and_haplotype(row):
         return "Partial distal 4qA", "4qA"
     elif q4b_mapped and q4b_high_identity and starts_with_chr4:  
         return "Partial distal 4qB", "4qB"
+    elif q4b_marker_mapped and q4b_marker_high_identity and starts_with_chr4:  
+        return "Partial distal 4qB", "4qB"
     elif pLAM_mapped and starts_with_chr10:
         return "Partial distal 10qA", "10qA"
     elif q4b_mapped  and q4b_high_identity and starts_with_chr10:  
         return "Partial distal 10qB", "10qB"
+    elif q4b_marker_mapped and q4b_marker_high_identity and starts_with_chr10:  
+         return "Partial distal 10qB", "10qB"
     elif p13_mapped and (starts_with_chr4 or starts_with_chr10):
         return "Partial proximal Unclassified", "NA"  # Haplotype is NA for this label
     else:
         return "Partial internal Unclassified", "NA"
-        # Classify no feature reads
-        # try:
-        #     # Calculate expected read length based on MappedEstimatedCopies
-        #     mapped_estimated_copies = float(row.get("MappedEstimatedCopies", 0))  # Default to 0 if missing
-        #     expected_length_kb = mapped_estimated_copies * 3.3  # Convert to kb by multiplying by 3.3
-        #     actual_length_kb = float(row.get("ReadLength", 0)) / 1000  # Convert ReadLength to kb
-
-        #     # Compare expected length with actual length (+/- 3.3)
-        #     if (actual_length_kb - 3.3 <= expected_length_kb <= actual_length_kb + 3.3) or duplex:
-        #         return "Partial internal Unclassified", "NA"
-        #     else:
-        #         # ADD if it's partial distal unclassified, if GenomeCoords starts with chr4 then 4qB or chr10 then 10qB
-        #         if row["GenomeCoords"].startswith("chr4"):
-        #             return "Partial distal 4qB", "4qB"
-        #         elif row["GenomeCoords"].startswith("chr10"):
-        #             return "Partial distal 10qB", "10qB"
-        #         # print(row["ReadID"], row["ReadLabel"])
-
-        # except ValueError as e:
-        #     print(f"Error processing row {row.get('ReadID', 'Unknown')}: {e}")
 
 def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, fasta_file=None):
     """
@@ -632,7 +463,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
     psl_df = read_psl(psl_file)
 
     # List of features to check
-    features = ["d4z4_chr4_proximal", "p13-E11", "pLAM", "4qA_probe", "4qB_probe"]
+    features = ["d4z4_chr4_proximal", "p13-E11", "pLAM", "4qA_probe", "4qB_probe", "4qA_marker", "4qB_marker"]
 
     # Prepare results dictionary
     results = {}
@@ -696,7 +527,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
             f"{feature}_completeness"
         ])
         # Include PercentIdentity for specific features
-        if feature in ["4qA_probe", "4qB_probe"]:
+        if feature in ["4qA_probe", "4qB_probe", "4qA_marker", "4qB_marker"]:
             columns.append(f"{feature}_percent_identity")
     columns.extend(["pLAM_contains_polyA", "pLAM_polyA_coords", "pLAM_polyA_signal"])
 
