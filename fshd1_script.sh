@@ -7,6 +7,8 @@
 #PBS -l jobfs=10GB
 #PBS -l wd
 
+set -e # <-- abort on any error
+
 # Set LMDB memory size for BLAST
 # export BLASTDB_LMDB_MAP_SIZE=200000000
 
@@ -110,7 +112,6 @@ fi
 # Run winnowmap alignment
 echo "WINNOWMAP" 
 winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" | \
-        # samtools view -L "$REGION_BED" -q ${MAPQ} -Sb | \
         samtools view -L "$REGION_BED" -Sb | \
         samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
@@ -228,7 +229,7 @@ python3 helper/flag_repeats.py \
     --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
 
 ########## check if 4a haplotype is long ##############
-./identify_long_repeats.sh "${OUTDIR}" "${PREFIX}"
+# ./identify_long_repeats.sh "${OUTDIR}" "${PREFIX}"
 
 # Unify features and repeats into a single bed and add colour
 python3 helper/add_colors_to_bed.py \
