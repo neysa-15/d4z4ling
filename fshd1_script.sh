@@ -19,7 +19,7 @@ REF=/g/data/kr68/genome/hs1.fa           # Reference genome
 # REF_DIR=$(dirname "$REF")
 REGION_BED=inputs/d4z4_region.chm13.bed
 FEATURES_FASTA=inputs/features.fasta
-PLAM_FASTA=inputs/pLAM.fasta
+SHORT_FEATURES=inputs/short_features.fasta
 PROBES=inputs/probes.fasta
 PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
@@ -135,7 +135,7 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${
 
 # Map pLAM to reads using BLAT
 # echo "Mapping reads to features using BLAT"
-# # blat -t=dna -q=dna -maxIntron=500 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$PLAM_FASTA" "${OUTDIR}/${PREFIX}_mapped_plam.psl"
+# # blat -t=dna -q=dna -maxIntron=500 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$SHORT_FEATURES" "${OUTDIR}/${PREFIX}_mapped_plam.psl"
 # blat -t=dna -q=dna -maxIntron=500 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "${OUTDIR}/${PREFIX}_mapped_features.psl"
 
 # Convert PSL to BED
