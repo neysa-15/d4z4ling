@@ -14,7 +14,7 @@ def color_d4z4_chr4_proximal(main_tsv, outfile):
         score = row["d4z4_chr4_proximal_score"]
         strand = row["strand"]
         thick_start, thick_end = start, end
-        color = "203, 195, 227"  # Light purple
+        color = "128,0,0"
         block_count, block_sizes, block_starts = 1, f"{int(end) - int(start)},", "0,"
 
         outfile.write("\t".join([chrom, start, end, "d4z4_chr4_proximal", str(score), strand,
@@ -28,7 +28,9 @@ def process_beds(main_tsv, features_bed, repeats_bed, sslp_bed, output_bed):
     feature_color_map = {
         "d4z4_chr4_proximal": "255,0,0",  # Red
         "p13-E11": "0,255,0",            # Green
-        "pLAM": "0,0,255"                # Blue
+        "pLAM": "0,0,255",                # Blue
+        "4qA_marker": "122,48,160",       # Dark purple
+        "4qB_marker": "0,100,0",       # Dark green
     }
     sslp_color = "255,0,255"  # Magenta for SSLP
 
