@@ -6,7 +6,7 @@ READS=$3
 
 FEATURES_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/features.fasta
 PLAM_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/short_features.fasta
-SEQ_4QB=/g/data/kr68/neysa/fshd_pipeline/inputs/4qB_rc.fa
+SEQ_4QB=/g/data/kr68/neysa/fshd_pipeline/inputs/4qB_marker.fa
 
 # module load minimap2/2.22
 # module load samtools/1.19
