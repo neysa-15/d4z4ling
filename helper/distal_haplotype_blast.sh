@@ -20,11 +20,11 @@ module load blast/2.14.1
 module load seqkit/2.9.0
 module load bedtools/2.31.0
 
-# PREFIX=$1
-# OUTDIR=$2
+OUTDIR=$1
+PREFIX=$2
 
-# PREFIX=RJ1207 #AS2603 JURA89
-OUTDIR=/g/data/kr68/fshd/results_mapq0/${PREFIX}
+# PREFIX=R240059 #AS2603 JURA89
+# OUTDIR=/g/data/kr68/fshd/results_phased_assembly/${PREFIX}/${PREFIX}_hap2
 
 repeat_threshold=2640 # 80% of 3300 bp
 
@@ -82,55 +82,42 @@ for read_id in $read_id_list; do
 
     # Find the closest repeats to pLAM
     tmp_distal_bed="${OUTDIR}/${PREFIX}_tmp_${read_id}_distal.bed"
-    bedtools closest -s -a $tmp_read_plam -b $tmp_read_repeats > $tmp_distal_bed
+    # bedtools closest -s -a $tmp_read_plam -b $tmp_read_repeats > $tmp_distal_bed
+    bedtools closest -s -io -a "$tmp_read_plam" -b "$tmp_read_repeats" | uniq > $tmp_distal_bed
 
     # Take the lowest and highest coordinate, strand and repeat number of distal copy
-    read start_coord end_coord strand repeat_number < <(
-    awk '{
-        for (i=2; i<=3; i++) {
-            if (min=="" || $i < min) min=$i
-            if (max=="" || $i > max) max=$i
-        }
-        for (i=14; i<=15; i++) {
-            if (min=="" || $i < min) min=$i
-            if (max=="" || $i > max) max=$i
-        }
-        if (strand=="") strand=$6
-        if (repeat=="" || $16 > repeat) repeat=$16
-    }
-    END {
-        print min, max, strand, repeat
-    }' "$tmp_distal_bed"
-    )
+    while IFS=$'\t' read -r chrA startA endA nameA scoreA strandA thickStartA thickEndA colorA blockCountA blockSizesA blockStartsA \
+                      chrB startB endB nameB scoreB strandB thickStartB thickEndB colorB blockCountB blockSizesB blockStartsB; do
 
-    # Get distal sequence from the original sequence
-    if [[ -n "$start_coord" && -n "$end_coord" ]]; then
-        if [[ $start_coord == 0 ]]; then
+        # Compute max coordinates
+        start_coord=$(( startA < startB ? startA : startB ))
+        end_coord=$(( endA > endB ? endA : endB ))
+        strand=$strandA
+        repeat_number="${nameB}"  # Extract number from d4z4_* label
+
+        [[ -z "$start_coord" || -z "$end_coord" ]] && continue
+
+        if [[ "$start_coord" == 0 ]]; then
             start_coord=1
         fi
 
-        # Record region to BED sanity file
-        size=$(( $end_coord - $start_coord ))
+        size=$(( end_coord - start_coord ))
+
         echo -e "${read_id}\t${start_coord}\t${end_coord}\t${repeat_number}\t.\t${strand}\t${size}," >> "$DISTAL_COORDS_BED"
-
-        # Log action
         echo "Extracting $read_id : ${start_coord}-${end_coord} on strand $strand" >&2
-
-        # Extract subsequence
         seqkit subseq --chr "$read_id" -r "${start_coord}:${end_coord}" "$ORIGINAL_SEQ" >> "$EXTRACTED_SEQUENCE"
-    else
-        echo "Skipping $read_id — empty region start or end ($start_coord, $end_coord)" >&2
-    fi
 
-    rm $tmp_read_plam
-    rm $tmp_read_repeats
-    rm $tmp_distal_bed
+    done < "$tmp_distal_bed"
+
+    # rm $tmp_read_plam
+    # rm $tmp_read_repeats
+    # rm $tmp_distal_bed
 done
 
 echo "✅ Extracted sequences written to $EXTRACTED_SEQUENCE"
 
 # Clean up
-rm ${OUTDIR}/${PREFIX}_tmp_*
+# rm ${OUTDIR}/${PREFIX}_tmp_*
 
 # Set LMDB memory size for BLAST
 export BLASTDB_LMDB_MAP_SIZE=200000000
@@ -215,6 +202,8 @@ END {
     percentage = (dux4_count / total) * 100
     printf "%.2f", percentage
 }' "${OUTDIR}/${PREFIX}_top1_match_counts.txt")
+
+echo "$percentage_longvar"
 
 # Reannotate reads with long var
 output_bed="${OUTDIR}/${PREFIX}_updated_long_var.bed"

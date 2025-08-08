@@ -228,9 +228,6 @@ python3 helper/flag_repeats.py \
     --hybrid "${OUTDIR}/${PREFIX}_potential_hybrid.tsv" \
     --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
 
-########## check if 4a haplotype is long ##############
-# ./identify_long_repeats.sh "${OUTDIR}" "${PREFIX}"
-
 # Unify features and repeats into a single bed and add colour
 python3 helper/add_colors_to_bed.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
@@ -238,6 +235,9 @@ python3 helper/add_colors_to_bed.py \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
     --sslp_bed "${OUTDIR}/${PREFIX}_SSLP.bed" \
     --output_bed "${OUTDIR}/${PREFIX}_all_features.bed"
+
+# reannotate distal haplotype when identified as the 4qA long haplotype (DUX4L)
+/g/data/kr68/neysa/fshd_pipeline/helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
 
 # Extract the read from the uBAM and convert it to FASTQ and FASTA formats abd align the extracted FASTQ back to the FASTA reference (self-mapping)
 # samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \

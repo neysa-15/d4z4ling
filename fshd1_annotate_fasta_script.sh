@@ -86,6 +86,12 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${
 
 echo "Converting PSL to BED"
  ${PSLTOBED} "${OUTDIR}/${PREFIX}_mapped_features.psl" "${OUTDIR}/${PREFIX}_mapped_features.bed"
+ 
+# Map pLAM
+/g/data/kr68/neysa/fshd_pipeline/helper/find_pLAM.sh "${OUTDIR}" "${PREFIX}"
+
+sort "${OUTDIR}/${PREFIX}_mapped_features.bed" | uniq > "${OUTDIR}/${PREFIX}_mapped_features_unique.bed"
+mv "${OUTDIR}/${PREFIX}_mapped_features_unique.bed" "${OUTDIR}/${PREFIX}_mapped_features.bed"
 
 # Map SSLP
 seqkit amplicon --bed -F GGTGGAGTTCTGGTTTCAGC -R CCTGTGCTTCAGAGGCATTTG -m 2 "$INPUT_FASTA" > "${OUTDIR}/${PREFIX}_SSLP.bed"
@@ -165,4 +171,7 @@ python3 /g/data/kr68/neysa/fshd_pipeline/helper/add_colors_to_bed.py \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
     --sslp_bed "${OUTDIR}/${PREFIX}_SSLP.bed" \
     --output_bed "${OUTDIR}/${PREFIX}_all_features.bed"
+    
+# reannotate distal haplotype when identified as the 4qA long haplotype (DUX4L)
+/g/data/kr68/neysa/fshd_pipeline/helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
 
