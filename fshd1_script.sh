@@ -81,12 +81,6 @@ elif [[  ( ! -z "$INPUT_FASTQ" ) && ( -f "$INPUT_FASTQ") ]]; then
     INPUT_UBAM="${OUTDIR}/${FASTQ_BASE%.fastq}.bam"
 fi
 
-# Identify 4qA & 4qB probes in raw data
-# echo "IDENTIFY PROBES"
-# samtools fasta ${INPUT_UBAM} > ${OUTDIR}/${PREFIX}_all_reads_uBAM.fasta
-# makeblastdb -in ${OUTDIR}/${PREFIX}_all_reads_uBAM.fasta -dbtype nucl -out ${OUTDIR}/${PREFIX}_db
-# blastn -query ${PROBES} -db ${OUTDIR}/${PREFIX}_db -out ${OUTDIR}/${PREFIX}_probes.blast.txt -outfmt 6
-
 echo "MERYL"
 # Define meryl outputs relative to the reference genome directory
 REF_NAME=$(basename $REF .fa)
@@ -132,11 +126,6 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${
 
 # map features
 /g/data/kr68/neysa/fshd_pipeline/helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
-
-# Map pLAM to reads using BLAT
-# echo "Mapping reads to features using BLAT"
-# # blat -t=dna -q=dna -maxIntron=500 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$SHORT_FEATURES" "${OUTDIR}/${PREFIX}_mapped_plam.psl"
-# blat -t=dna -q=dna -maxIntron=500 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "${OUTDIR}/${PREFIX}_mapped_features.psl"
 
 # Convert PSL to BED
 echo "Converting PSL to BED"
@@ -213,13 +202,24 @@ python3 "$alignment_script" \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
 
-# Map d4z4 repeats back to the reads of interest
-# minimap2 --secondary=no --MD -ax asm5 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_d4z4_units.fasta" | samtools sort -o "${OUTDIR}/${PREFIX}_d4z4_repeats.bam"
-# samtools index "${OUTDIR}/${PREFIX}_d4z4_repeats.bam"
-
-# bedtools bamtobed -i "${OUTDIR}/${PREFIX}_d4z4_repeats.bam" > "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
-
-/g/data/kr68/neysa/fshd_pipeline/helper/hybrid.sh "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${PREFIX}_potential_hybrid.tsv"
+samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | awk '{
+    primary_chr = $3
+    for (i=12; i<=NF; i++) {
+        if ($i ~ /^SA:Z:/) {
+            sub(/^SA:Z:/, "", $i)
+            n = split($i, sa_alignments, ";")
+            for (j=1; j<=n; j++) {
+                if (sa_alignments[j] == "") continue
+                split(sa_alignments[j], sa_fields, ",")
+                sa_chr = sa_fields[1]
+                mapq = sa_fields[5]
+                if (primary_chr != sa_chr && mapq >= 30) {
+                    print $1, primary_chr, sa_alignments[j]
+                }
+            }
+        }
+    }
+}' > "${OUTDIR}/${PREFIX}_potential_hybrid.tsv"
 
 # Flag for gaps and overlaps
 python3 helper/flag_repeats.py \
