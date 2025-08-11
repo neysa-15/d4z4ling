@@ -1,0 +1,11 @@
+/SAMPLE/
+/genome/
+__pycache__
+inputs/dux4_genbank.fasta
+inputs/merylDB_hs1/
+install/
+reads.bam
+slow5-testdata/
+venv3/
+
+
