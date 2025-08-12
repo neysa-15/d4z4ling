@@ -16,7 +16,8 @@ export PATH=$PATH:/data/hasindu/fshd_pipeline/install/kentutils/
 # minimod
 
 # check for all /data/hasindu paths and edit accordingly
-check for all the relative paths and edit accordnly
+#check for all the relative paths and edit accordnly
+
 
 source /data/hasindu/fshd_pipeline/venv3/bin/activate
 # pip3 install pandas Bio pysam plotly
@@ -24,3 +25,6 @@ source /data/hasindu/fshd_pipeline/venv3/bin/activate
 #/usr/bin/time -v /install/slow5-dorado-0.8.3/bin/slow5-dorado basecaller --models-directory /install/dorado-0.8.3/models /install/dorado-0.8.3/models/dna_r10.4.1_e8.2_400bps_sup@v5.0.0 slow5-testdata/PGXXXX230339_reads_20k.blow5  --modified-bases 5mCG_5hmCG -x cuda:all > reads.bam
 
 # 0:44.51
+
+/usr/bin/time -v /data/hasindu/fshd_pipeline/fshd1_script.sh --input-ubam /data/hasindu/fshd_pipeline/testdata/positive/AS2603/QGXHXX240243_supmeth_unaligned.bam
+# 1:47.76

@@ -298,8 +298,8 @@ awk '$5 >= 0.25 && $5 <= 0.75 {print $1, $2, $3, $5}' "${OUTDIR}/${PREFIX}_meth_
 rm "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph"
 
 # Create plotly reports
-python3 $REALPATH/helper/report_plotly.py \
-    --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
+ python3 $REALPATH/helper/report_plotly.py \
+     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
 
 # Remove temp created fastq/ubam
 if [[ $ubam_exist ]]; then
