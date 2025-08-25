@@ -127,10 +127,6 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${
 # map features
 /g/data/kr68/neysa/fshd_pipeline/helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
 
-# Convert PSL to BED
-echo "Converting PSL to BED"
- ${PSLTOBED} "${OUTDIR}/${PREFIX}_mapped_features.psl" "${OUTDIR}/${PREFIX}_mapped_features.bed"
-
 # Map SSLP
 seqkit amplicon --bed -F GGTGGAGTTCTGGTTTCAGC -R CCTGTGCTTCAGAGGCATTTG -m 2 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" > "${OUTDIR}/${PREFIX}_SSLP.bed"
 
