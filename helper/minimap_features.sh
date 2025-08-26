@@ -4,17 +4,17 @@ OUTDIR=$1
 PREFIX=$2
 READS=$3
 
-module unload samtools
-module unload bedtools
-module unload blat
-module unload kentutils
-module unload minimap2
+# module unload samtools
+# module unload bedtools
+# module unload blat
+# module unload kentutils
+# module unload minimap2
 
-module load samtools/1.19
-module load bedtools/2.28.0
-module load blat/37
-module load kentutils/0.0
-module load minimap2/2.22
+# module load samtools/1.19
+# module load bedtools/2.28.0
+# module load blat/37
+# module load kentutils/0.0
+# module load minimap2/2.22
 
 PSLTOBED=/g/data/if89/apps/kentutils/0.0/bin/pslToBed
 
@@ -69,13 +69,13 @@ while read -r header; do
 done < <(grep '^>' "$READS")
 
 # Merge all into a single BAM
-samtools merge -f "${OUTDIR}/${PREFIX}_mapped_features.merged.bam" ${TEMP_BAM}/*.bam
-samtools index "${OUTDIR}/${PREFIX}_mapped_features.merged.bam"
+samtools merge -f "${OUTDIR}/${PREFIX}_mapped_features.bam" ${TEMP_BAM}/*.bam
+samtools index "${OUTDIR}/${PREFIX}_mapped_features.bam"
 
-bedtools bamtobed -i "${OUTDIR}/${PREFIX}_mapped_features.merged.bam" > "${OUTDIR}/${PREFIX}_mapped_features.bed"
+bedtools bamtobed -i "${OUTDIR}/${PREFIX}_mapped_features.bam" > "${OUTDIR}/${PREFIX}_mapped_features.bed"
 
 # convert bam -> sam -> psl
-samtools view -h "${OUTDIR}/${PREFIX}_mapped_features.merged.bam" > "${OUTDIR}/${PREFIX}_mapped_features.merged.sam"
+samtools view -h "${OUTDIR}/${PREFIX}_mapped_features.bam" > "${OUTDIR}/${PREFIX}_mapped_features.merged.sam"
 
 python3 /g/data/kr68/neysa/fshd_pipeline/helper/sam2psl.py \
     -i "${OUTDIR}/${PREFIX}_mapped_features.merged.sam" \
@@ -106,3 +106,6 @@ cat "${OUTDIR}/${PREFIX}_pLAM_matches.bed" >> "${OUTDIR}/${PREFIX}_mapped_featur
 # Optional: clean up
 rm $TMP_FA
 rm -r $TEMP_BAM
+rm ${OUTDIR}/${PREFIX}_pLAM_matches*
+rm "${OUTDIR}/${PREFIX}_mapped_features.merged.psl"
+rm "${OUTDIR}/${PREFIX}_mapped_features.merged.sam"
