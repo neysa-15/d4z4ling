@@ -169,7 +169,8 @@ def methylation_summary(summary_file, features_file, methylation_file, output_fi
                     summary_df = calculate_distal_copy_methylation(idx, summary_df, read_methylation, distal_start, distal_end)
 
     # Save the updated features DataFrame to a new BED file
-    # features_df.to_csv(updated_bed_file, sep="\t", index=False, header=False)
+    features_df.to_csv(updated_bed_file, sep="\t", index=False, header=False)
+    
     return summary_df
 
 def fshd1_individual_read_status(df, output_file):

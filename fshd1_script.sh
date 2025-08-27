@@ -1,22 +1,11 @@
 #!/bin/bash
-#PBS -P kr68
-#PBS -q normalbw
-#PBS -l walltime=01:15:00
-#PBS -l ncpus=3
-#PBS -l mem=40GB
-#PBS -l jobfs=10GB
-#PBS -l wd
 
 set -e # <-- abort on any error
-
-# Set LMDB memory size for BLAST
-# export BLASTDB_LMDB_MAP_SIZE=200000000
 
 # Default inputs
 INPUT_UBAM=""                            # Unaligned BAM
 INPUT_FASTQ=""
 REF=/g/data/kr68/genome/hs1.fa           # Reference genome
-# REF_DIR=$(dirname "$REF")
 REGION_BED=inputs/d4z4_region.chm13.bed
 FEATURES_FASTA=inputs/features.fasta
 SHORT_FEATURES=inputs/short_features.fasta
@@ -25,6 +14,7 @@ PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
 HAPLOTYPE_REFS=inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
 REPEATS_FASTA=inputs/dux4.gene_complete_genbank_20241127.reformatted.fasta
+REMOVE_INTERMEDIATE_FILES=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -39,6 +29,7 @@ while [[ $# -gt 0 ]]; do
         --probes) PROBES="$2"; shift 2;;
         --haplotype-refs) HAPLOTYPE_REFS="$2"; shift 2;;
         --repeats-fasta) REPEATS_FASTA="$2"; shift 2;;
+        --remove-intermediate-files) REMOVE_INTERMEDIATE_FILES="$2"; shift 2;;
         *) echo "Unknown option: $1"; exit 1;;
     esac
 done
@@ -235,11 +226,6 @@ python3 helper/add_colors_to_bed.py \
 # reannotate distal haplotype when identified as the 4qA long haplotype (DUX4L)
 /g/data/kr68/neysa/fshd_pipeline/helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
 
-# Extract the read from the uBAM and convert it to FASTQ and FASTA formats abd align the extracted FASTQ back to the FASTA reference (self-mapping)
-# samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
-#     samtools fastq -TMM,ML - | minimap2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
-#     samtools sort -@ ${THREADS} - > "${OUTDIR}/${PREFIX}_meth_reads.bam"
-
 samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
     samtools fastq -TMM,ML - | minimap2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
     samtools view -F 2308 -b - | \
@@ -294,6 +280,14 @@ rm "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth
 # Create plotly reports
 python3 helper/report_plotly.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
+
+# Remove intermediate files
+if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
+    rm ${OUTDIR}/${PREFIX}_*blast*
+    rm ${OUTDIR}/${PREFIX}_*top*
+    rm ${OUTDIR}/${PREFIX}_*psl
+    rm ${OUTDIR}/${PREFIX}_*d4z4*
+fi
 
 # Remove temp created fastq/ubam
 if [[ $ubam_exist ]]; then
