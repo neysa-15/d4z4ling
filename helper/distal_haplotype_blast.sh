@@ -109,9 +109,9 @@ for read_id in $read_id_list; do
 
     done < "$tmp_distal_bed"
 
-    # rm $tmp_read_plam
-    # rm $tmp_read_repeats
-    # rm $tmp_distal_bed
+    rm $tmp_read_plam
+    rm $tmp_read_repeats
+    rm $tmp_distal_bed
 done
 
 echo "✅ Extracted sequences written to $EXTRACTED_SEQUENCE"
