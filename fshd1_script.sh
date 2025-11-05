@@ -13,7 +13,6 @@ PROBES=inputs/probes.fasta
 PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
 HAPLOTYPE_REFS=inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
-REPEATS_FASTA=inputs/dux4.gene_complete_genbank_20241127.reformatted.fasta
 REMOVE_INTERMEDIATE_FILES=false
 
 # Parse arguments
@@ -28,7 +27,6 @@ while [[ $# -gt 0 ]]; do
         --features-fasta) FEATURES_FASTA="$2"; shift 2;;
         --probes) PROBES="$2"; shift 2;;
         --haplotype-refs) HAPLOTYPE_REFS="$2"; shift 2;;
-        --repeats-fasta) REPEATS_FASTA="$2"; shift 2;;
         --remove-intermediate-files) REMOVE_INTERMEDIATE_FILES="$2"; shift 2;;
         *) echo "Unknown option: $1"; exit 1;;
     esac
@@ -96,7 +94,7 @@ fi
 
 # Run winnowmap alignment
 echo "WINNOWMAP" 
-winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" | \
+winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
         samtools view -L "$REGION_BED" -Sb | \
         samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
@@ -189,6 +187,7 @@ python3 "$alignment_script" \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
 
+# Get potential hybrid reads by looking for supplementary alignments
 samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | awk '{
     primary_chr = $3
     for (i=12; i<=NF; i++) {
@@ -237,11 +236,13 @@ samtools index "${OUTDIR}/${PREFIX}_meth_reads.bam"
 # use minimod to get meth probabilities for each CpG within a given read
 minimod view -c m "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_meth_reads.bam" | awk 'NR > 1 {print $4"\t"$5"\t"$5+1"\t.\t"$7}' > "${OUTDIR}/${PREFIX}_meth_reads.bed"
 
+fshd1_read_status_tsv="${OUTDIR}/${PREFIX}_fshd1_status_counts.tsv"
 python3 helper/methylation_summary.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --features_bed "${OUTDIR}/${PREFIX}_all_features.bed" \
     --meth "${OUTDIR}/${PREFIX}_meth_reads.bed" \
     --output "${OUTDIR}/${PREFIX}_methylation_summary.tsv" \
+    --fshd1_read_status_tsv $fshd1_read_status_tsv \
     --updated_bed "${OUTDIR}/${PREFIX}_updated_features.bed"
 
 mv "${OUTDIR}/${PREFIX}_methylation_summary.tsv" "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"

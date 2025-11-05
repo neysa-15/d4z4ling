@@ -1,0 +1,8 @@
+FSHD1_status	Haplotype	Read_type	Copy_number	Methylation	PolyA	Count
+Diagnostic/Positive	4qA	Complete	<=10	<50%	Permissive	0
+Diagnostic/Negative	4qA	Complete/Partial distal	>10	>=50%	Any	0
+Diagnostic/Negative	4qB	Complete/Partial distal	>3	Any	Non-permissive / absent	0
+Diagnostic/Conflicting	4qA	Complete	<=10	>=50%	Non-permissive / absent	0
+Support/Positive	4qA	Partial distal	3 - 10	<50%	Permissive	0
+Support/Negative	4qA	Partial distal	3 - 10	>=50%	Any	0
+Non-diagnostic	Any	Any	Any	Any	Any	0
