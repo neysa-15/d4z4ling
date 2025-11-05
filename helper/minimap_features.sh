@@ -18,9 +18,9 @@ READS=$3
 
 PSLTOBED=/g/data/if89/apps/kentutils/0.0/bin/pslToBed
 
-FEATURES_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/features.fasta
-SHORT_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/short_features.fasta
-PLAM_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/pLAM.fasta
+FEATURES_FASTA=$4
+SHORT_FASTA=$5
+PLAM_FASTA=$6
 
 TEMP_BAM=$OUTDIR/tmp_bams
 mkdir -p "$TEMP_BAM"

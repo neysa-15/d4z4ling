@@ -9,6 +9,7 @@ REF=/g/data/kr68/genome/hs1.fa           # Reference genome
 REGION_BED=inputs/d4z4_region.chm13.bed
 FEATURES_FASTA=inputs/features.fasta
 SHORT_FEATURES=inputs/short_features.fasta
+PLAM=inputs/pLAM.fasta
 PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
 HAPLOTYPE_REFS=inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
@@ -24,6 +25,8 @@ while [[ $# -gt 0 ]]; do
         --ref) REF="$2"; shift 2;;
         --region-bed) REGION_BED="$2"; shift 2;;
         --features-fasta) FEATURES_FASTA="$2"; shift 2;;
+        --short-features-fasta) SHORT_FEATURES="$2"; shift 2;;
+        --plam) PLAM="$2"; shift 2;;
         --haplotype-refs) HAPLOTYPE_REFS="$2"; shift 2;;
         --remove-intermediate-files) REMOVE_INTERMEDIATE_FILES="$2"; shift 2;;
         *) echo "Unknown option: $1"; exit 1;;
@@ -112,7 +115,7 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${
 #######################################
 
 # map features
-/g/data/kr68/neysa/fshd_pipeline/helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
+/g/data/kr68/neysa/fshd_pipeline/helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "$SHORT_FEATURES" "$PLAM"
 
 # Map SSLP
 seqkit amplicon --bed -F GGTGGAGTTCTGGTTTCAGC -R CCTGTGCTTCAGAGGCATTTG -m 2 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" > "${OUTDIR}/${PREFIX}_SSLP.bed"
