@@ -97,7 +97,7 @@ for read_id in $read_id_list; do
 
         [[ -z "$start_coord" || -z "$end_coord" ]] && continue
 
-        if [[ "$start_coord" == 0 ]]; then
+        if [[ "$start_coord" -le 0 ]]; then
             start_coord=1
         fi
 
