@@ -9,7 +9,6 @@ REF=/g/data/kr68/genome/hs1.fa           # Reference genome
 REGION_BED=inputs/d4z4_region.chm13.bed
 FEATURES_FASTA=inputs/features.fasta
 SHORT_FEATURES=inputs/short_features.fasta
-PROBES=inputs/probes.fasta
 PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
 HAPLOTYPE_REFS=inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
@@ -25,7 +24,6 @@ while [[ $# -gt 0 ]]; do
         --ref) REF="$2"; shift 2;;
         --region-bed) REGION_BED="$2"; shift 2;;
         --features-fasta) FEATURES_FASTA="$2"; shift 2;;
-        --probes) PROBES="$2"; shift 2;;
         --haplotype-refs) HAPLOTYPE_REFS="$2"; shift 2;;
         --remove-intermediate-files) REMOVE_INTERMEDIATE_FILES="$2"; shift 2;;
         *) echo "Unknown option: $1"; exit 1;;
