@@ -17,8 +17,6 @@ def initialise_results(results, bed_df, features, lengths_dict):
             results[read_id]["pLAM_polyA_coords"] = None
             results[read_id]["pLAM_polyA_signal"] = None
             results[read_id]["ReadLength"] = lengths_dict.get(read_id, "NA")
-            results[read_id]["4qA_probe_percent_identity"] = "NA"
-            results[read_id]["4qB_probe_percent_identity"] = "NA"
             results[read_id]["4qA_marker_percent_identity"] = "NA"
             results[read_id]["4qB_marker_percent_identity"] = "NA"
             results[read_id]["duplex"] = False
@@ -297,11 +295,6 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
         read_length = int(row["t_size"])
         strand = row["strand"]
 
-        if read_name == 'f30f0390-4265-4c0a-a90c-956928fa701a' and feature_name == "d4z4_chr4_proximal":
-            print("f30f0390-4265-4c0a-a90c-956928fa701a")
-            print(f"completeness {completeness}")
-            # print(feature_name)
-
         # Ensure the read-strand combination exists in results_df
         if (read_name, strand) not in results_df.index:
             continue
@@ -358,7 +351,7 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
                 results_df.at[(read_name, strand), "pLAM_contains_polyA"] = False
 
         # Handle percent identity for 4qA_probe and 4qB_probe
-        if feature_name in ["4qA_probe", "4qB_probe", "4qA_marker", "4qB_marker"]:
+        if feature_name in ["4qA_marker", "4qB_marker"]:
             matches = row["matches"]
             mismatches = row["mismatches"]
             rep_matches = row["rep_matches"]
@@ -404,14 +397,9 @@ def read_psl(psl_file):
 def assign_read_label_and_haplotype(row):
     p13_mapped = row["p13-E11_mapped"]
     pLAM_mapped = row["pLAM_mapped"]
-    q4b_mapped = row["4qB_probe_mapped"]
     q4b_marker_mapped = row["4qB_marker_mapped"]
     duplex = row["duplex"]
     genome_coords = row.get("GenomeCoords", "NA")  # Default to "NA" if not available
-
-    # Check PercentIdentity for q4B
-    q4b_identity = row.get("4qB_probe_percent_identity", 0)  # Default to 0 if not available
-    q4b_high_identity = q4b_mapped and q4b_identity > 95
 
     # Check PercentIdentity for q4B marker
     q4b_marker_identity = row.get("4qB_marker_percent_identity", 0)  # Default to 0 if not available
@@ -424,20 +412,16 @@ def assign_read_label_and_haplotype(row):
     # Determine label and haplotype
     if p13_mapped and pLAM_mapped and starts_with_chr4:
         return "Complete 4qA", "4qA"
-    elif p13_mapped and q4b_mapped and q4b_high_identity and starts_with_chr4:  
+    elif p13_mapped and q4b_marker_mapped and q4b_marker_high_identity and starts_with_chr4:  
         return "Complete 4qB", "4qB"
     elif p13_mapped and pLAM_mapped and starts_with_chr10:
         return "Complete 10qA", "10qA"
     elif pLAM_mapped and starts_with_chr4:
         return "Partial distal 4qA", "4qA"
-    elif q4b_mapped and q4b_high_identity and starts_with_chr4:  
-        return "Partial distal 4qB", "4qB"
     elif q4b_marker_mapped and q4b_marker_high_identity and starts_with_chr4:  
         return "Partial distal 4qB", "4qB"
     elif pLAM_mapped and starts_with_chr10:
         return "Partial distal 10qA", "10qA"
-    elif q4b_mapped  and q4b_high_identity and starts_with_chr10:  
-        return "Partial distal 10qB", "10qB"
     elif q4b_marker_mapped and q4b_marker_high_identity and starts_with_chr10:  
          return "Partial distal 10qB", "10qB"
     elif p13_mapped and (starts_with_chr4 or starts_with_chr10):
@@ -463,7 +447,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
     psl_df = read_psl(psl_file)
 
     # List of features to check
-    features = ["d4z4_chr4_proximal", "p13-E11", "pLAM", "4qA_probe", "4qB_probe", "4qA_marker", "4qB_marker"]
+    features = ["d4z4_chr4_proximal", "p13-E11", "pLAM", "4qA_marker", "4qB_marker"]
 
     # Prepare results dictionary
     results = {}
@@ -499,10 +483,6 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
 
     # Create a new DataFrame
     results_df = pd.DataFrame(expanded_rows).reset_index(drop=True)
-
-    # print(results_df)
-    # results_df.to_csv(output_table, index=False, sep="\t")
-    # return
     
     # Populate features from psl file
     results_df = populate_features(psl_df, results_df, features, fasta_file, sequences_dict, COMPLETENESS_THRESHOLD=10)
@@ -527,7 +507,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
             f"{feature}_completeness"
         ])
         # Include PercentIdentity for specific features
-        if feature in ["4qA_probe", "4qB_probe", "4qA_marker", "4qB_marker"]:
+        if feature in ["4qA_marker", "4qB_marker"]:
             columns.append(f"{feature}_percent_identity")
     columns.extend(["pLAM_contains_polyA", "pLAM_polyA_coords", "pLAM_polyA_signal"])
 

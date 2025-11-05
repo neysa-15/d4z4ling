@@ -18,9 +18,9 @@ READS=$3
 
 PSLTOBED=/g/data/if89/apps/kentutils/0.0/bin/pslToBed
 
-FEATURES_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/features.fasta
-SHORT_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/short_features.fasta
-PLAM_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/pLAM.fasta
+FEATURES_FASTA=$4
+SHORT_FASTA=$5
+PLAM_FASTA=$6
 
 TEMP_BAM=$OUTDIR/tmp_bams
 mkdir -p "$TEMP_BAM"
@@ -89,8 +89,8 @@ blat -stepSize=5 -repMatch=2253 -minScore=20 -minIdentity=0 "$READS" "${PLAM_FAS
 awk 'BEGIN{FS=OFS="\t"} 
      $1 ~ /^[0-9]+$/ { 
         split($19,a,","); 
-        aln_size = $1 + $2 + $3; 
-        if (aln_size > 0 && a[1] >= 100 && a[1]/aln_size >= 0.5) print 
+        completeness = $1 / $11 * 100; 
+        if (completeness >= 50) print 
      }' "${OUTDIR}/${PREFIX}_pLAM_matches.psl" \
 > "${OUTDIR}/${PREFIX}_pLAM_matches_filtered.psl"
 

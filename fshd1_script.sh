@@ -1,30 +1,19 @@
 #!/bin/bash
-#PBS -P kr68
-#PBS -q normalbw
-#PBS -l walltime=01:15:00
-#PBS -l ncpus=3
-#PBS -l mem=40GB
-#PBS -l jobfs=10GB
-#PBS -l wd
 
 set -e # <-- abort on any error
-
-# Set LMDB memory size for BLAST
-# export BLASTDB_LMDB_MAP_SIZE=200000000
 
 # Default inputs
 INPUT_UBAM=""                            # Unaligned BAM
 INPUT_FASTQ=""
 REF=/g/data/kr68/genome/hs1.fa           # Reference genome
-# REF_DIR=$(dirname "$REF")
 REGION_BED=inputs/d4z4_region.chm13.bed
 FEATURES_FASTA=inputs/features.fasta
 SHORT_FEATURES=inputs/short_features.fasta
-PROBES=inputs/probes.fasta
+PLAM=inputs/pLAM.fasta
 PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
 HAPLOTYPE_REFS=inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
-REPEATS_FASTA=inputs/dux4.gene_complete_genbank_20241127.reformatted.fasta
+REMOVE_INTERMEDIATE_FILES=false
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -36,9 +25,10 @@ while [[ $# -gt 0 ]]; do
         --ref) REF="$2"; shift 2;;
         --region-bed) REGION_BED="$2"; shift 2;;
         --features-fasta) FEATURES_FASTA="$2"; shift 2;;
-        --probes) PROBES="$2"; shift 2;;
+        --short-features-fasta) SHORT_FEATURES="$2"; shift 2;;
+        --plam) PLAM="$2"; shift 2;;
         --haplotype-refs) HAPLOTYPE_REFS="$2"; shift 2;;
-        --repeats-fasta) REPEATS_FASTA="$2"; shift 2;;
+        --remove-intermediate-files) REMOVE_INTERMEDIATE_FILES="$2"; shift 2;;
         *) echo "Unknown option: $1"; exit 1;;
     esac
 done
@@ -105,7 +95,7 @@ fi
 
 # Run winnowmap alignment
 echo "WINNOWMAP" 
-winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" | \
+winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
         samtools view -L "$REGION_BED" -Sb | \
         samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
@@ -125,7 +115,7 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${
 #######################################
 
 # map features
-/g/data/kr68/neysa/fshd_pipeline/helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
+/g/data/kr68/neysa/fshd_pipeline/helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "$SHORT_FEATURES" "$PLAM"
 
 # Map SSLP
 seqkit amplicon --bed -F GGTGGAGTTCTGGTTTCAGC -R CCTGTGCTTCAGAGGCATTTG -m 2 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" > "${OUTDIR}/${PREFIX}_SSLP.bed"
@@ -198,6 +188,7 @@ python3 "$alignment_script" \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
 
+# Get potential hybrid reads by looking for supplementary alignments
 samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | awk '{
     primary_chr = $3
     for (i=12; i<=NF; i++) {
@@ -235,11 +226,6 @@ python3 helper/add_colors_to_bed.py \
 # reannotate distal haplotype when identified as the 4qA long haplotype (DUX4L)
 /g/data/kr68/neysa/fshd_pipeline/helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
 
-# Extract the read from the uBAM and convert it to FASTQ and FASTA formats abd align the extracted FASTQ back to the FASTA reference (self-mapping)
-# samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
-#     samtools fastq -TMM,ML - | minimap2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
-#     samtools sort -@ ${THREADS} - > "${OUTDIR}/${PREFIX}_meth_reads.bam"
-
 samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
     samtools fastq -TMM,ML - | minimap2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
     samtools view -F 2308 -b - | \
@@ -251,11 +237,13 @@ samtools index "${OUTDIR}/${PREFIX}_meth_reads.bam"
 # use minimod to get meth probabilities for each CpG within a given read
 minimod view -c m "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_meth_reads.bam" | awk 'NR > 1 {print $4"\t"$5"\t"$5+1"\t.\t"$7}' > "${OUTDIR}/${PREFIX}_meth_reads.bed"
 
+fshd1_read_status_tsv="${OUTDIR}/${PREFIX}_fshd1_status_counts.tsv"
 python3 helper/methylation_summary.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --features_bed "${OUTDIR}/${PREFIX}_all_features.bed" \
     --meth "${OUTDIR}/${PREFIX}_meth_reads.bed" \
     --output "${OUTDIR}/${PREFIX}_methylation_summary.tsv" \
+    --fshd1_read_status_tsv $fshd1_read_status_tsv \
     --updated_bed "${OUTDIR}/${PREFIX}_updated_features.bed"
 
 mv "${OUTDIR}/${PREFIX}_methylation_summary.tsv" "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
@@ -294,6 +282,14 @@ rm "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth
 # Create plotly reports
 python3 helper/report_plotly.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
+
+# Remove intermediate files
+if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
+    rm ${OUTDIR}/${PREFIX}_*blast*
+    rm ${OUTDIR}/${PREFIX}_*top*
+    rm ${OUTDIR}/${PREFIX}_*psl
+    rm ${OUTDIR}/${PREFIX}_*d4z4*
+fi
 
 # Remove temp created fastq/ubam
 if [[ $ubam_exist ]]; then
