@@ -51,9 +51,9 @@ def analyse_bed(bed_data):
                     overlapping_labels.extend([label1, label2])
                     overlapping_coords.extend([f"{s1}-{e1}", f"{s2}-{e2}"])
 
-        # remove duplicates in overlaps
-        overlapping_labels = list(set(overlapping_labels))
-        overlapping_coords = list(set(overlapping_coords))
+        # Remove duplicates but keep order
+        overlapping_labels = list(dict.fromkeys(overlapping_labels))
+        overlapping_coords = list(dict.fromkeys(overlapping_coords))
 
         results[(read_id, strand)] = {
             'gaps': gap_found,
@@ -65,7 +65,6 @@ def analyse_bed(bed_data):
     return results
 
 
-
 def check_re_vs_haplotype(row,  re_threshold=0.7, ratio_threshold=50):
     haplotype = row['Haplotype']
     num_xapi = row['XapI_Sensitive_Repeats']
@@ -73,8 +72,6 @@ def check_re_vs_haplotype(row,  re_threshold=0.7, ratio_threshold=50):
     xapi_ratio = row['XapI_RE_Ratio_(%)']
     blni_ratio = row['BlnI_RE_Ratio_(%)']
     copy_number = row['MappedEstimatedCopies']
-
-    # print(type(chr), type(haplotype), type(xapi_ratio), type(blni_ratio))
 
     if type(haplotype) == float and pd.isna(haplotype):
         return "NA"  # Skip if haplotype is NaN
@@ -140,14 +137,12 @@ def get_distal_d4z4_coords(df):
         # Get d4z4_1, or fallback to min if missing
         distal_d4z4 = df[df["d4z4_num"] == 1].iloc[0] if (df["d4z4_num"] == 1).any() else df.loc[df["d4z4_num"].idxmin()]
 
-        # size = distal_d4z4["BlockSizes"].split(",")[0]
         size = distal_d4z4["end"] - distal_d4z4["start"]
         if int(size) < repeat_threshold:
             # If the first block size is 0, use the second largest
             distal_copy = distal_d4z4["d4z4_num"] + 1
             distal_d4z4 = df[df["d4z4_num"] == distal_copy].iloc[0] if (df["d4z4_num"] == distal_copy).any() else df.loc[df["d4z4_num"].idxmin()]
 
-    # print(df["chrom"].iloc[0], strand, distal_d4z4["start"], distal_d4z4["end"])
     return strand, distal_d4z4["start"], distal_d4z4["end"]
 
 def flag_read_label(main_tsv, repeats_bed, fasta_file):
