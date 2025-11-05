@@ -177,53 +177,100 @@ def fshd1_individual_read_status(df, output_file):
     df.astype({'MappedEstimatedCopies': 'int', 'pLAM_Methylation_Percentage': 'float'}).dtypes
     
     # ----------- FSHD1_diagnostic_positive -----------
-    df.loc[(df['ReadLabel'] == 'Complete 4qA') & (df['MappedEstimatedCopies'] < 11) & (df['pLAM_Methylation_Percentage'] < 50.0) & ((df['pLAM_polyA_signal'] == 'ATTAAA') | (df['pLAM_polyA_signal'] == 'TTTAAT')), 'FSHD1_status'] = 'FSHD1_diagnostic_positive'
+    df.loc[
+        (df['ReadLabel'] == 'Complete 4qA')
+        & (df['MappedEstimatedCopies'] < 11)
+        & (df['pLAM_Methylation_Percentage'] < 50.0)
+        & ((df['pLAM_polyA_signal'] == 'ATTAAA') | (df['pLAM_polyA_signal'] == 'TTTAAT'))
+    , 'FSHD1_status'] = 'Diagnostic/Positive'
 
     # ----------- FSHD1_diagnostic_negative -----------
     # Type 1: Uncontracted 4qA
-    df.loc[(df['ReadLabel'] == 'Complete 4qA') & (df['MappedEstimatedCopies'] >= 11) & (df['pLAM_Methylation_Percentage'] >= 50.0) & ((df['pLAM_polyA_signal'] == 'ATTAAA') | (df['pLAM_polyA_signal'] == 'TTTAAT')), 'FSHD1_status'] = 'FSHD1_diagnostic_negative'
+    df.loc[
+        ((df['ReadLabel'] == 'Complete 4qA') | (df['ReadLabel'] == 'Partial distal 4qA'))
+        & (df['MappedEstimatedCopies'] >= 11)
+    , 'FSHD1_status'] = 'Diagnostic/Negative'
     # Type 2: 4qB
-    df.loc[(df['ReadLabel'] == 'Complete 4qB') | ((df['ReadLabel'] == 'Partial distal 4qB') & (df['MappedEstimatedCopies'] >= 3)), 'FSHD1_status'] = 'FSHD1_diagnostic_negative'
+    df.loc[
+        (df['ReadLabel'] == 'Complete 4qB') | ((df['ReadLabel'] == 'Partial distal 4qB')
+        & (df['MappedEstimatedCopies'] >= 3))
+    , 'FSHD1_status'] = 'Diagnostic/Negative'
 
     # -----------  FSHD1_partial_consistent_support -----------
     # Read label: Partial distal 4qA
     # 3 <= MappedEstimatedCopies <= 10
     # Distal methylation <50%
     # Permissive polyA signal (ATTAAA, TTTAAT)
-    df.loc[(df['ReadLabel'] == 'Partial distal 4qA') & ((df['MappedEstimatedCopies'] >= 3) & (df['MappedEstimatedCopies'] < 11)) & (df['pLAM_Methylation_Percentage'] < 50.0) & ((df['pLAM_polyA_signal'] == 'ATTAAA') | (df['pLAM_polyA_signal'] == 'TTTAAT')), 'FSHD1_status'] = 'FSHD1_partial_consistent_support'
+    df.loc[
+        (df['ReadLabel'] == 'Partial distal 4qA')
+        & ((df['MappedEstimatedCopies'] >= 3) & (df['MappedEstimatedCopies'] < 11))
+        & (df['pLAM_Methylation_Percentage'] < 50.0)
+        & ((df['pLAM_polyA_signal'] == 'ATTAAA') | (df['pLAM_polyA_signal'] == 'TTTAAT'))
+    , 'FSHD1_status'] = 'Support/Positive'
 
     # -----------  FSHD1_complete_conflicting  -----------
     # Read label: Complete 4qA
     # MappedEstimatedCopies <= 10
     # (Distal methylation >= 50%) OR (PolyA non-permissive or absent)
-    df.loc[(df['ReadLabel'] == 'Complete 4qA') & (df['MappedEstimatedCopies'] < 11) & ((df['pLAM_Methylation_Percentage'] >= 50.0) | ((df['pLAM_polyA_signal'] != 'ATTAAA') & (df['pLAM_polyA_signal'] != 'TTTAAT'))), 'FSHD1_status'] = 'FSHD1_complete_conflicting'
+    df.loc[
+        (df['ReadLabel'] == 'Complete 4qA')
+        & (df['MappedEstimatedCopies'] < 11)
+        & ((df['pLAM_Methylation_Percentage'] >= 50.0) | ((df['pLAM_polyA_signal'] != 'ATTAAA') & (df['pLAM_polyA_signal'] != 'TTTAAT')))
+    , 'FSHD1_status'] = 'Diagnostic/Conflicting'
 
-    # -----------  FSHD1_partial_conflicting_support  -----------
+    # -----------  FSHD1_support negative  -----------
     # Read label: Partial distal 4qA
-    # MappedEstimatedCopies <= 10
-    # (Distal methylation >= 50%) OR (PolyA non-permissive or absent)
-    df.loc[(df['ReadLabel'] == 'Partial distal 4qA') & ((df['MappedEstimatedCopies'] >= 3) & (df['MappedEstimatedCopies'] < 11)) & ((df['pLAM_Methylation_Percentage'] >= 50.0) | ((df['pLAM_polyA_signal'] != 'ATTAAA') & (df['pLAM_polyA_signal'] != 'TTTAAT'))), 'FSHD1_status'] = 'FSHD1_partial_conflicting_support'
+    # 3 <= MappedEstimatedCopies <= 10
+    # (Distal methylation >= 50%)
+    df.loc[
+        (df['ReadLabel'] == 'Partial distal 4qA')
+        & ((df['MappedEstimatedCopies'] >= 3) & (df['MappedEstimatedCopies'] < 11))
+        & ((df['pLAM_Methylation_Percentage'] >= 50.0) | ((df['pLAM_polyA_signal'] != 'ATTAAA') & (df['pLAM_polyA_signal'] != 'TTTAAT')))
+    , 'FSHD1_status'] = 'Support/Negative'
 
     # If didn't get any status from above then FSHD1_status = FSHD1_non_diagnostic
-    df['FSHD1_status'] = df['FSHD1_status'].fillna('FSHD1_non_diagnostic')
+    df['FSHD1_status'] = df['FSHD1_status'].fillna('Non-diagnostic')
     
     return df
 
-def fshd2_individual_read_status(df, output_file):
-    df.astype({'MappedEstimatedCopies': 'int', 'pLAM_Methylation_Percentage': 'float'}).dtypes
+# def fshd2_individual_read_status(df, output_file):
+#     df.astype({'MappedEstimatedCopies': 'int', 'pLAM_Methylation_Percentage': 'float'}).dtypes
 
-    # ----------- FSHD2_positive_support -----------
-    # first: no 4qA contraction but hypomethylated
-    df.loc[(df['ReadLabel'] == 'Complete 4qA') & (df['MappedEstimatedCopies'] >= 11) & (df['pLAM_Methylation_Percentage'] < 50.0) & ((df['pLAM_polyA_signal'] == 'ATTAAA') | (df['pLAM_polyA_signal'] == 'TTTAAT')), 'FSHD2_status'] = 'FSHD2_positive_support'
+#     # ----------- FSHD2_positive_support -----------
+#     # first: no 4qA contraction but hypomethylated
+#     df.loc[(df['ReadLabel'] == 'Complete 4qA') & (df['MappedEstimatedCopies'] >= 11) & (df['pLAM_Methylation_Percentage'] < 50.0) & ((df['pLAM_polyA_signal'] == 'ATTAAA') | (df['pLAM_polyA_signal'] == 'TTTAAT')), 'FSHD2_status'] = 'FSHD2_positive_support'
 
-    # second: the other haplotype also hypomethylated
-    df.loc[((df['Haplotype'] == '4qB') | (df['Haplotype'] == '10qA') | (df['Haplotype'] == '10qB')) & (df['MappedEstimatedCopies'] >= 3) & (df['pLAM_Methylation_Percentage'] < 50.0), 'FSHD2_status'] = 'FSHD2_positive_support'
+#     # second: the other haplotype also hypomethylated
+#     df.loc[((df['Haplotype'] == '4qB') | (df['Haplotype'] == '10qA') | (df['Haplotype'] == '10qB')) & (df['MappedEstimatedCopies'] >= 3) & (df['pLAM_Methylation_Percentage'] < 50.0), 'FSHD2_status'] = 'FSHD2_positive_support'
 
-    # If didn't get any status from above then FSHD2_status = FSHD2_non_diagnostic
-    df['FSHD2_status'] = df['FSHD2_status'].fillna('FSHD2_non_diagnostic')
+#     # If didn't get any status from above then FSHD2_status = FSHD2_non_diagnostic
+#     df['FSHD2_status'] = df['FSHD2_status'].fillna('FSHD2_non_diagnostic')
 
-    # Save the updated main TSV file, replacing empty values with "NA"
-    df.fillna("NA").to_csv(output_file, sep="\t", index=False)
+#     # Save the updated main TSV file, replacing empty values with "NA"
+#     df.fillna("NA").to_csv(output_file, sep="\t", index=False)
+
+def extract_fshd1_status(summary_df, fshd1_status_tsv):
+    template = pd.read_csv("inputs/fshd1_status_template.tsv", sep="\t")
+
+    result = template.copy()
+    result["Count"] = 0
+
+    # Increment counts in result template based on status
+    for _, row in summary_df.iterrows():
+        mask = ((result["FSHD1_status"] == row["FSHD1_status"]) & (result["FSHD1_status"] != "Diagnostic/Negative"))
+        result.loc[mask, "Count"] += 1
+
+    # Handle diagnostic negative based on haplotype
+    neg_df = summary_df[summary_df["FSHD1_status"] == "Diagnostic/Negative"]
+
+    mask_neg4qa = ((result["FSHD1_status"] == "Diagnostic/Negative") & (result["Haplotype"] == "4qA"))
+    result.loc[mask_neg4qa, "Count"] = len(neg_df[neg_df["Haplotype"] == "4qA"])
+
+    mask_neg4qb = ((result["FSHD1_status"] == "Diagnostic/Negative") & (result["Haplotype"] == "4qB"))
+    result.loc[mask_neg4qb, "Count"] = len(neg_df[neg_df["Haplotype"] == "4qB"])
+
+    print(result)
+    result.to_csv(fshd1_status_tsv, sep='\t', index=False)
 
 if __name__ == "__main__":
     # Set up argument parser
@@ -233,6 +280,7 @@ if __name__ == "__main__":
     parser.add_argument("--meth", required=True, help="Path to the methylation BED file (e.g., meth_reads.bed).")
     parser.add_argument("--output", required=True, help="Path to save the updated main TSV file.")
     parser.add_argument("--updated_bed", required=True, help="Path to save the updated features BED file.")
+    parser.add_argument("--fshd1_read_status_tsv", required=True, help="Path to save fshd1 status tsv")
 
     # Parse arguments
     args = parser.parse_args()
@@ -243,10 +291,14 @@ if __name__ == "__main__":
     methylation_file = args.meth
     output_file = args.output
     updated_bed_file = args.updated_bed
+    fshd1_status_tsv = args.fshd1_read_status_tsv
 
     summary_df = methylation_summary(summary_file, features_file, methylation_file, output_file, updated_bed_file)
     summary_df = fshd1_individual_read_status(summary_df, output_file)
-    fshd2_individual_read_status(summary_df, output_file)
+    # fshd2_individual_read_status(summary_df, output_file)
+
+    # Write status count to table
+    extract_fshd1_status(summary_df, fshd1_status_tsv)
 
     print(f"Updated main TSV file saved to {output_file}")
     print(f"Updated features BED file saved to {updated_bed_file}")
