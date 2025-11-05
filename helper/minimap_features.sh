@@ -89,8 +89,8 @@ blat -stepSize=5 -repMatch=2253 -minScore=20 -minIdentity=0 "$READS" "${PLAM_FAS
 awk 'BEGIN{FS=OFS="\t"} 
      $1 ~ /^[0-9]+$/ { 
         split($19,a,","); 
-        aln_size = $1 + $2 + $3; 
-        if (aln_size > 0 && a[1] >= 100 && a[1]/aln_size >= 0.5) print 
+        completeness = $1 / $11 * 100; 
+        if (completeness >= 50) print 
      }' "${OUTDIR}/${PREFIX}_pLAM_matches.psl" \
 > "${OUTDIR}/${PREFIX}_pLAM_matches_filtered.psl"
 
