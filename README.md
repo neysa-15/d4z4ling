@@ -4,7 +4,7 @@
 
 FSHD pipeline is a pipeline that takes in ONT LRS data with panel capturing the subtelomeric regions of chr4 and chr10, containing the D4Z4 macrosatellite that is contracted in FSHD1 (4q) and its non-pathogenic copy (10q), then analyses the reads that fully or partially span the D4Z4 repeat to determine the number of D4Z4 copies, methylation level at the distal copy, haplotype, and identify other supporting features on each individual copies of a given sample.
 
-![D4Z4ling diagram][https://github.com/neysa-15/fshd_pipeline/blob/main/docs/script_diagram.png]
+![d4z4ling diagram](https://raw.githubusercontent.com/neysa-15/fshd_pipeline/main/docs/script_diagram.png)
 
 # Usage on NCI
 
