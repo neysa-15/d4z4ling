@@ -94,10 +94,28 @@ else
 fi
 
 # Run winnowmap alignment
-echo "WINNOWMAP" 
-winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
+# echo "WINNOWMAP" 
+# winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
+#         samtools view -L "$REGION_BED" -Sb | \
+#         samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
+
+echo "minimap winnowmap"
+# MMI="${OUTDIR}/${REF_NAME}.mmi"
+# minimap2 -x $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
+#  -r 500,100k --rmq=yes -f 0.001
+MMI="inputs/hs1_minimap2_28.mmi"
+minimap2 -x $MODE -a "$MMI" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
         samtools view -L "$REGION_BED" -Sb | \
-        samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
+        samtools sort -o "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
+
+samtools index "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
+
+# Remap with winnowmap to CHM13
+samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
+    samtools fastq -TMM,ML - | \
+    winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" - -t ${PBS_NCPUS:-8} | \
+    samtools view -L "$REGION_BED" -Sb | \
+    samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
 samtools index "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
