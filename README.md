@@ -14,12 +14,12 @@ Criteria for diagnosing:
 
 FSHD pipeline is a pipeline that takes in ONT LRS data with panel capturing the subtelomeric regions of chr4 and chr10, containing the D4Z4 macrosatellite that is contracted in FSHD1 (4q) and its non-pathogenic copy (10q), then analyses the reads that fully or partially span the D4Z4 repeat to determine the number of D4Z4 copies, methylation level at the distal copy, haplotype, and identify other supporting features on each individual copies of a given sample.
 
-![][image1]
+![d4z4ling diagram](docs/script_diagram.png)
 
 # Outputs
 
 This pipeline annotates each individual reads in the aligned BAM file, then classifies them into different haplotypes (4qA, 4qB, 10qA, 10qB).   
-![][image2]
+![d4z4 annotation](docs/D4Z4_rep.png)
 
 | Features | Description |
 | :---- | :---- |
@@ -51,7 +51,7 @@ FSHD1 status breakdown:
 | Non-diagnostic | 10qA, 10qB | Any | Any | Any | Any |
 
 The script will also produce plot like this:  
-![][image3]  
+![d4z4 vs methylation plot](docs/d4z4vsmethyl_plot_for_github.png)  
 Showing number of D4Z4 copies vs methylation level of each read.
 
 - Complete reads concentrated on the bottom left section means it’s contracted and hypomethylated, this supports the diagnosis of FSHD1 positive.  
