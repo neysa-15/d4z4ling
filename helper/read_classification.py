@@ -281,7 +281,7 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
     # Set MultiIndex on ReadID and strand for uniqueness
     results_df.set_index(["ReadID", "strand"], inplace=True)
 
-    for _, row in psl_df.iterrows():
+    for index, row in psl_df.iterrows():
         read_name = row["t_name"]  # Target is the read
         feature_name = row["q_name"]  # Query is the feature
 
@@ -297,6 +297,7 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
 
         # Ensure the read-strand combination exists in results_df
         if (read_name, strand) not in results_df.index:
+            print(f"NOT IN index {read_name} - {feature_name}")
             continue
 
         # Update ReadLength if not set
@@ -312,26 +313,25 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
             continue
 
         # if results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True:
-        if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name != "d4z4_chr4_proximal"):
-            continue
+        if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name == "d4z4_chr4_proximal"):
+            # To combine fragmented d4z4_chr4_proximal, taking the coordinates that covers the most
+            # For now it's currently only changing the coordinate (not the other components)
+            # if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name == "d4z4_chr4_proximal") and (results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"] is not None):
+            if(results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"] is not None):
+                prev_tstart = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[0]
+                prev_tend = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[1]
 
-        # To combine fragmented d4z4_chr4_proximal, taking the coordinates that covers the most
-        # For now it's currently only changing the coordinate (not the other components)
-        if (results_df.at[(read_name, strand), f"{feature_name}_mapped"] == True) and (feature_name == "d4z4_chr4_proximal") and (results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"] is not None):
-            prev_tstart = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[0]
-            prev_tend = results_df.at[(read_name, strand), "d4z4_chr4_proximal_coords"].split("-")[1]
+                prev_tstart = int(prev_tstart)
+                prev_tend = int(prev_tend)
 
-            prev_tstart = int(prev_tstart)
-            prev_tend = int(prev_tend)
+                if prev_tstart < t_start:
+                    t_start = prev_tstart
+                if prev_tend > t_end:
+                    t_end = prev_tend
 
-            if prev_tstart < t_start:
-                t_start = prev_tstart
-            if prev_tend > t_end:
-                t_end = prev_tend
-
-            results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{t_start}-{t_end}"
-            
-            continue
+                results_df.at[(read_name, strand), f"{feature_name}_coords"] = f"{t_start}-{t_end}"
+                
+                continue
 
         # Update feature mapping details
         results_df.at[(read_name, strand), f"{feature_name}_mapped"] = True
@@ -403,7 +403,7 @@ def assign_read_label_and_haplotype(row):
 
     # Check PercentIdentity for q4B marker
     q4b_marker_identity = row.get("4qB_marker_percent_identity", 0)  # Default to 0 if not available
-    q4b_marker_high_identity = q4b_marker_mapped and q4b_marker_identity > 95
+    q4b_marker_high_identity = q4b_marker_mapped and q4b_marker_identity > 42
 
     # Check chromosomes
     starts_with_chr4 = genome_coords.startswith("chr4")

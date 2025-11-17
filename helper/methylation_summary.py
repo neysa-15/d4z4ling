@@ -300,5 +300,7 @@ if __name__ == "__main__":
     # Write status count to table
     extract_fshd1_status(summary_df, fshd1_status_tsv)
 
+    summary_df.fillna("NA").to_csv(output_file, sep='\t', index=False)
+
     print(f"Updated main TSV file saved to {output_file}")
     print(f"Updated features BED file saved to {updated_bed_file}")
