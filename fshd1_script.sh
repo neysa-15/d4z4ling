@@ -13,6 +13,7 @@ PLAM=inputs/pLAM.fasta
 PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
 HAPLOTYPE_REFS=inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
+MMI="inputs/hs1.mmi"
 REMOVE_INTERMEDIATE_FILES=false
 
 # Parse arguments
@@ -29,6 +30,7 @@ while [[ $# -gt 0 ]]; do
         --plam) PLAM="$2"; shift 2;;
         --haplotype-refs) HAPLOTYPE_REFS="$2"; shift 2;;
         --remove-intermediate-files) REMOVE_INTERMEDIATE_FILES="$2"; shift 2;;
+        --minimap-ref-index) MMI="$2"; shift 2;;
         *) echo "Unknown option: $1"; exit 1;;
     esac
 done
@@ -103,7 +105,6 @@ echo "minimap winnowmap"
 # MMI="${OUTDIR}/${REF_NAME}.mmi"
 # minimap2 -x $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
 #  -r 500,100k --rmq=yes -f 0.001
-MMI="inputs/hs1_minimap2_28.mmi"
 minimap2 -x $MODE -a "$MMI" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
         samtools view -L "$REGION_BED" -Sb | \
         samtools sort -o "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
@@ -133,7 +134,7 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${
 #######################################
 
 # map features
-/g/data/kr68/neysa/fshd_pipeline/helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "$SHORT_FEATURES" "$PLAM"
+./helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "$SHORT_FEATURES" "$PLAM"
 
 # Map SSLP
 seqkit amplicon --bed -F GGTGGAGTTCTGGTTTCAGC -R CCTGTGCTTCAGAGGCATTTG -m 2 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" > "${OUTDIR}/${PREFIX}_SSLP.bed"
@@ -242,7 +243,7 @@ python3 helper/add_colors_to_bed.py \
     --output_bed "${OUTDIR}/${PREFIX}_all_features.bed"
 
 # reannotate distal haplotype when identified as the 4qA long haplotype (DUX4L)
-/g/data/kr68/neysa/fshd_pipeline/helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
+./helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
 
 samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
     samtools fastq -TMM,ML - | minimap2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
