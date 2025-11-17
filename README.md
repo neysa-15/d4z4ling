@@ -10,6 +10,8 @@ Criteria for diagnosing:
 2. Contraction on permissive haplotype, 4qA.  
 3. Hypomethylated on the distal copy of the D4Z4 array
 
+This complexity poses a challenge in diagnosing the disorder confidently. Our pipeline addresses the challenge by doing Oxford Nanopore Technology (ONT) adaptive sampling with ReadFish, then computationally annotating each individual reads in the D4Z4 region with related features and methylation levels, providing high resolution information.
+
 # d4z4ling overview
 
 FSHD pipeline is a pipeline that takes in ONT LRS data with panel capturing the subtelomeric regions of chr4 and chr10, containing the D4Z4 macrosatellite that is contracted in FSHD1 (4q) and its non-pathogenic copy (10q), then analyses the reads that fully or partially span the D4Z4 repeat to determine the number of D4Z4 copies, methylation level at the distal copy, haplotype, and identify other supporting features on each individual copies of a given sample.
@@ -50,7 +52,7 @@ FSHD1 status breakdown:
 | Diagnostic/Negative | 4qB | Complete/Partial distal | \>3 | Any | NA |
 | Non-diagnostic | 10qA, 10qB | Any | Any | Any | Any |
 
-The script will also produce plot like this:  
+The script will also produce plot on sample_report.html, e.g.
 ![d4z4 vs methylation plot](docs/d4z4vsmethyl_plot_for_github.png)  
 Showing number of D4Z4 copies vs methylation level of each read.
 
