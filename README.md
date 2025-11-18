@@ -52,6 +52,8 @@ FSHD1 status breakdown:
 | Diagnostic/Negative | 4qB | Complete/Partial distal | \>3 | Any | NA |
 | Non-diagnostic | 10qA, 10qB | Any | Any | Any | Any |
 
+The FSHD1 status table on sample_fshd1_status_counts.tsv will show the read counts of each status which will help determine if a sample has FSHD1. Having only one of Diagnostic/Negative status (only 4qA or only 4qB) does not indicate FSHD1 negative since it could only be one of haplotype.
+
 The script will also produce plot on sample_report.html, e.g.
 ![d4z4 vs methylation plot](docs/d4z4vsmethyl_plot_for_github.png)  
 Showing number of D4Z4 copies vs methylation level of each read.
