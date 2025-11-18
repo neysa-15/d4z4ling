@@ -577,7 +577,7 @@ def get_psl(sam, lens, use_cigar_13=True , replace_string = '', read_sequence=Fa
             if sam[sam_SEQ] != '*' and sam[sam_CIGAR].find('H') == -1:
                 psl[psl_qSize] = len(sam[sam_SEQ])
             else:
-                # • Sum of lengths of the M/I/S/=/X operations shall equal the length of SEQ
+                # â€¢ Sum of lengths of the M/I/S/=/X operations shall equal the length of SEQ
                 psl[psl_qSize] = seq_len
 
             #
