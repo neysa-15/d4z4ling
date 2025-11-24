@@ -124,7 +124,7 @@ Run minimap2 reference indexing for script input (For efficiency purposes when r
 minimap2 -d inputs/hs1.mmi {Path to chm13 fasta}
 ```
 
-Last line of `nci\_run.sh` should be custom edited depending on the samples  
+Last line of `nci_run.sh` should be custom edited depending on the samples  
 Required field:
 
 ```
@@ -147,13 +147,13 @@ Optional field would be adding these flags (which have default input if not adde
 
 ### Available default input file
 
-1\. `d4z4\_region.chm13.bed`  
-2\. `d4z4\_repeats.fasta`  
-3\. `dux4.gene\_complete\_genbank\_20241127.reformatted.fasta`  
-4\. `features.fasta` 
-5\. `short\_features.fasta`  
+1\. `d4z4_region.chm13.bed`  
+2\. `d4z4_repeats.fasta`  
+3\. `dux4.gene_complete_genbank_20241127.reformatted.fasta`  
+4\. `features.fasta`  
+5\. `short_features.fasta`  
 6\. `pLAM.fasta`  
-7\. `Fshd1\_status\_template.tsv`  
+7\. `Fshd1_status_template.tsv`  
 
 # Publications
 
