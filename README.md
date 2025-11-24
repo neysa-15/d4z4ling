@@ -52,9 +52,9 @@ FSHD1 status breakdown:
 | Diagnostic/Negative | 4qB | Complete/Partial distal | \>3 | Any | NA |
 | Non-diagnostic | 10qA, 10qB | Any | Any | Any | Any |
 
-The FSHD1 status table on sample_fshd1_status_counts.tsv will show the read counts of each status which will help determine if a sample has FSHD1. Having only one of Diagnostic/Negative status (only 4qA or only 4qB) does not indicate FSHD1 negative since it could only be one of haplotype.
+The FSHD1 status table on `sample_fshd1_status_counts.tsv` will show the read counts of each status which will help determine if a sample has FSHD1. Having only one of Diagnostic/Negative status (only 4qA or only 4qB) does not indicate FSHD1 negative since it could only be one of haplotype.
 
-The script will also produce plot on sample_report.html, e.g.
+The script will also produce plot on `sample_report.html`, e.g.
 ![d4z4 vs methylation plot](docs/d4z4vsmethyl_plot_for_github.png)  
 Showing number of D4Z4 copies vs methylation level of each read.
 
@@ -119,7 +119,12 @@ Job script:
 qsub nci_run.sh
 ```
 
-Last line of nci\_run.sh should be custom edited depending on the samples  
+Run minimap2 reference indexing for script input (For efficiency purposes when running for multiple samples to the same reference)
+```
+minimap2 -d inputs/hs1.mmi {Path to chm13 fasta}
+```
+
+Last line of `nci\_run.sh` should be custom edited depending on the samples  
 Required field:
 
 ```
@@ -142,14 +147,13 @@ Optional field would be adding these flags (which have default input if not adde
 
 ### Available default input file
 
-1\. d4z4\_region.chm13.bed  
-2\. d4z4\_repeats.fasta  
-3\. dux4.gene\_complete\_genbank\_20241127.reformatted.fasta  
-4\. features.fasta  
-5\. short\_features.fasta  
-6\. pLAM.fasta  
-7\. Fshd1\_status\_template.tsv  
-8\. hs1.mmi
+1\. `d4z4\_region.chm13.bed`  
+2\. `d4z4\_repeats.fasta`  
+3\. `dux4.gene\_complete\_genbank\_20241127.reformatted.fasta`  
+4\. `features.fasta` 
+5\. `short\_features.fasta`  
+6\. `pLAM.fasta`  
+7\. `Fshd1\_status\_template.tsv`  
 
 # Publications
 
