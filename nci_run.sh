@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #PBS -P kr68
 #PBS -q normal
-#PBS -l walltime=04:00:00
+#PBS -l walltime=05:00:00
 #PBS -l ncpus=48
 #PBS -l mem=192GB
 #PBS -l storage=gdata/kr68+gdata/if89+scratch/kr68
@@ -18,10 +18,16 @@ module unload bedtools
 module unload seqtk
 module unload blast
 module unload gcc
+module unload seqkit
+module unload minimod
+module unload meryl
+module unload Winnowmap
+module unload kentutils
+module unload blat
 
 # load modules
 module load python3/3.12.1
-module load minimap2/2.22
+module load minimap2/2.28
 module load samtools/1.19
 module load bedtools/2.28.0
 module load seqtk/1.3
@@ -32,7 +38,14 @@ module load minimod/0.2.0
 module load meryl/1.4.1
 module load Winnowmap/2.03
 module load kentutils/0.0
+module load blat/37
 
-# /g/data/kr68/neysa/fshd_pipeline/fshd1_annotate_fasta_script.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-fasta ${UBAM}
-/g/data/kr68/neysa/fshd_pipeline/fshd1_script.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-ubam ${UBAM}
+source /g/data/kr68/neysa/fshd_pipeline/fshd1_venv2/bin/activate
 
+if [[ $UBAM == *.fasta ]] || [[ $UBAM == *.fa ]]; then
+    echo "Processing fasta file: $SAMPLE $UBAM"
+    ./fshd1_annotate_fasta_script.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-fasta ${UBAM}
+else
+    echo "Processing uBAM file: $SAMPLE $UBAM"
+    ./fshd1_script.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-ubam ${UBAM} --remove-intermediate-files true
+fi
