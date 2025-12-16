@@ -107,7 +107,7 @@ pip install -r requirements.txt
 
 Request to be in IF89 project on NCI website 
 
-Add this to your \~/.bash\_profile once approved to project
+Add this to your `~/.bash_profile` once approved to project
 
 ```
 module use -a /g/data/if89/apps/modulefiles
