@@ -1,4 +1,5 @@
 # d4z4ling
+Pre-print: https://www.medrxiv.org/content/10.64898/2025.12.06.25340828v1
 
 # Background
 
@@ -14,7 +15,7 @@ This complexity poses a challenge in diagnosing the disorder confidently. Our pi
 
 # d4z4ling overview
 
-FSHD pipeline is a pipeline that takes in ONT LRS data with panel capturing the subtelomeric regions of chr4 and chr10, containing the D4Z4 macrosatellite that is contracted in FSHD1 (4q) and its non-pathogenic copy (10q), then analyses the reads that fully or partially span the D4Z4 repeat to determine the number of D4Z4 copies, methylation level at the distal copy, haplotype, and identify other supporting features on each individual copies of a given sample.
+d4z4ling is a pipeline that takes in ONT LRS data with panel capturing the subtelomeric regions of chr4 and chr10, containing the D4Z4 macrosatellite that is contracted in FSHD1 (4q) and its non-pathogenic copy (10q), then analyses the reads that fully or partially span the D4Z4 repeat to determine the number of D4Z4 copies, methylation level at the distal copy, haplotype, and identify other supporting features on each individual copies of a given sample.
 
 ![d4z4ling diagram](docs/script_diagram.png)
 
@@ -165,7 +166,7 @@ Xiao, L.C., Ayush Semwal, John, B.S., Zeglinski, K., Su, S., Lancaster, J., Xue,
 
 # Acknowledgments
 
-* This is a collaborative project with authors from **Targeted long-read sequencing enables comprehensive analysis of the genetic and epigenetic landscape of inherited myopathies** {will link to pre-print}  
+* This is a collaborative project with authors from [Targeted long-read sequencing enables comprehensive analysis of the genetic and epigenetic landscape of inherited myopathies](https://www.medrxiv.org/content/10.64898/2025.12.06.25340828v1.full)
 * Initial script written by Andre Martins Reis  
 * Andre and Ira for all the support and opportunity to be involved in this project  
 * My partner Justin for coming up with the cool name d4z4ling
