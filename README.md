@@ -162,7 +162,7 @@ Optional field would be adding these flags (which have default input if not adde
 
 # References
 
-Xiao, L.C., Ayush Semwal, John, B.S., Zeglinski, K., Su, S., Lancaster, J., Xue, S., Reversade, B., Ritchie, M.E., Frederique Magdinier, Blewitt, M.E. and Gouil, Q. (2025). D4Z4End2End: complete genetic and epigenetic architecture of D4Z4 macrosatellites in FSHD, BAMS and reference cohorts. bioRxiv (Cold Spring Harbor Laboratory). doi:https://doi.org/10.1101/2025.04.24.25326320.
+Reference for `4qB_marker` sequence: Xiao, L.C., Ayush Semwal, John, B.S., Zeglinski, K., Su, S., Lancaster, J., Xue, S., Reversade, B., Ritchie, M.E., Frederique Magdinier, Blewitt, M.E. and Gouil, Q. (2025). D4Z4End2End: complete genetic and epigenetic architecture of D4Z4 macrosatellites in FSHD, BAMS and reference cohorts. bioRxiv (Cold Spring Harbor Laboratory). doi:https://doi.org/10.1101/2025.04.24.25326320.
 
 # Acknowledgments
 
