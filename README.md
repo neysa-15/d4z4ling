@@ -65,6 +65,8 @@ Showing number of D4Z4 copies vs methylation level of each read.
 
 # Usage
 
+If you are an NCI user, please refer to this [NCI guide](./README.gadi.md)
+
 Tools:
 
 ```
@@ -83,18 +85,11 @@ kentutils/0.0
 blat/37
 ```
 
-After installation, path need to be adjusted for non-NCI user:
+After installation, adjust these paths:
 
 ```
 PSLTOBED=/g/data/if89/apps/kentutils/0.0/bin/pslToBed
 BG2BW=/g/data/if89/apps/kentutils/0.0/bin/bedGraphToBigWig
-```
-
-Load python3 (NCI users):
-
-```
-module unload python3
-module load python3/3.12.1
 ```
 
 Open your python3 virtual environment and install requirements
@@ -106,28 +101,12 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Request to be in IF89 project on NCI website 
-
-Add this to your \~/.bash\_profile once approved to project
-
-```
-module use -a /g/data/if89/apps/modulefiles
-```
-
-Job script:
-
-```
-qsub nci_run.sh
-```
-
 Run minimap2 reference indexing for script input (For efficiency purposes when running for multiple samples to the same reference)
 ```
 minimap2 -d inputs/hs1.mmi {Path to chm13 fasta}
 ```
 
-Last line of `nci_run.sh` should be custom edited depending on the samples  
-Required field:
-
+Run script:
 ```
 ./fshd1_script.sh --prefix {Prefix of output file} --outdir {Output directory name} --input-ubam {Path to uBAM input}
 ```
