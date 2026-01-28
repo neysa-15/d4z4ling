@@ -1,4 +1,5 @@
 # d4z4ling
+Pre-print: https://www.medrxiv.org/content/10.64898/2025.12.06.25340828v1
 
 # Background
 
@@ -14,7 +15,7 @@ This complexity poses a challenge in diagnosing the disorder confidently. Our pi
 
 # d4z4ling overview
 
-FSHD pipeline is a pipeline that takes in ONT LRS data with panel capturing the subtelomeric regions of chr4 and chr10, containing the D4Z4 macrosatellite that is contracted in FSHD1 (4q) and its non-pathogenic copy (10q), then analyses the reads that fully or partially span the D4Z4 repeat to determine the number of D4Z4 copies, methylation level at the distal copy, haplotype, and identify other supporting features on each individual copies of a given sample.
+d4z4ling is a pipeline that takes in ONT LRS data with panel capturing the subtelomeric regions of chr4 and chr10, containing the D4Z4 macrosatellite that is contracted in FSHD1 (4q) and its non-pathogenic copy (10q), then analyses the reads that fully or partially span the D4Z4 repeat to determine the number of D4Z4 copies, methylation level at the distal copy, haplotype, and identify other supporting features on each individual copies of a given sample.
 
 ![d4z4ling diagram](docs/script_diagram.png)
 
@@ -29,7 +30,7 @@ This pipeline annotates each individual reads in the aligned BAM file, then clas
 | SSLP | Haplotype marker |
 | pLAM | qA specific haplotype marker |
 | 4qA marker | Additional qA specific haplotype marker |
-| 4qB marker, reverse of 4qB down (Xiao et al., 2025\) | qB specific haplotype marker  |
+| 4qB marker*, reverse of 4qB down (Xiao et al., 2025\) | qB specific haplotype marker  |
 
 The final TSV contains read by read information that points to whether it is valuable to diagnostic value
 
@@ -64,6 +65,8 @@ Showing number of D4Z4 copies vs methylation level of each read.
 
 # Usage
 
+If you are an NCI user, please refer to this [NCI guide](./README.gadi.md)
+
 Tools:
 
 ```
@@ -82,18 +85,11 @@ kentutils/0.0
 blat/37
 ```
 
-After installation, path need to be adjusted for non-NCI user:
+After installation, adjust these paths:
 
 ```
 PSLTOBED=/g/data/if89/apps/kentutils/0.0/bin/pslToBed
 BG2BW=/g/data/if89/apps/kentutils/0.0/bin/bedGraphToBigWig
-```
-
-Load python3 (NCI users):
-
-```
-module unload python3
-module load python3/3.12.1
 ```
 
 Open your python3 virtual environment and install requirements
@@ -105,28 +101,12 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Request to be in IF89 project on NCI website 
-
-Add this to your `~/.bash_profile` once approved to project
-
-```
-module use -a /g/data/if89/apps/modulefiles
-```
-
-Job script:
-
-```
-qsub nci_run.sh
-```
-
 Run minimap2 reference indexing for script input (For efficiency purposes when running for multiple samples to the same reference)
 ```
 minimap2 -d inputs/hs1.mmi {Path to chm13 fasta}
 ```
 
-Last line of `nci_run.sh` should be custom edited depending on the samples  
-Required field:
-
+Run script:
 ```
 ./fshd1_script.sh --prefix {Prefix of output file} --outdir {Output directory name} --input-ubam {Path to uBAM input}
 ```
@@ -161,11 +141,11 @@ Optional field would be adding these flags (which have default input if not adde
 
 # References
 
-Xiao, L.C., Ayush Semwal, John, B.S., Zeglinski, K., Su, S., Lancaster, J., Xue, S., Reversade, B., Ritchie, M.E., Frederique Magdinier, Blewitt, M.E. and Gouil, Q. (2025). D4Z4End2End: complete genetic and epigenetic architecture of D4Z4 macrosatellites in FSHD, BAMS and reference cohorts. bioRxiv (Cold Spring Harbor Laboratory). doi:https://doi.org/10.1101/2025.04.24.25326320.
+*Reference for `4qB_marker` sequence: Xiao, L.C., Ayush Semwal, John, B.S., Zeglinski, K., Su, S., Lancaster, J., Xue, S., Reversade, B., Ritchie, M.E., Frederique Magdinier, Blewitt, M.E. and Gouil, Q. (2025). D4Z4End2End: complete genetic and epigenetic architecture of D4Z4 macrosatellites in FSHD, BAMS and reference cohorts. bioRxiv (Cold Spring Harbor Laboratory). doi:https://doi.org/10.1101/2025.04.24.25326320.
 
 # Acknowledgments
 
-* This is a collaborative project with authors from **Targeted long-read sequencing enables comprehensive analysis of the genetic and epigenetic landscape of inherited myopathies** {will link to pre-print}  
+* This is a collaborative project with authors from [Targeted long-read sequencing enables comprehensive analysis of the genetic and epigenetic landscape of inherited myopathies](https://www.medrxiv.org/content/10.64898/2025.12.06.25340828v1.full)
 * Initial script written by Andre Martins Reis  
 * Andre and Ira for all the support and opportunity to be involved in this project  
 * My partner Justin for coming up with the cool name d4z4ling
