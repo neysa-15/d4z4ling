@@ -1,4 +1,4 @@
-logs="/g/data/kr68/fshd/logs"
+logs="logs"
 timestamp=$(date +%Y%m%d_%H%M%S)
 sample=${1}
 outdir=${2}
