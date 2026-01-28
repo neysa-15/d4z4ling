@@ -40,7 +40,7 @@ module load Winnowmap/2.03
 module load kentutils/0.0
 module load blat/37
 
-source /g/data/kr68/neysa/fshd_pipeline/fshd1_venv2/bin/activate
+source fshd1_venv/bin/activate
 
 if [[ $UBAM == *.fasta ]] || [[ $UBAM == *.fa ]]; then
     echo "Processing fasta file: $SAMPLE $UBAM"
