@@ -1,16 +1,16 @@
 #!/bin/bash
 
 INPUT_FASTA=""
-REF=/g/data/kr68/genome/hs1.fa           # Reference genome
-FEATURES_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/features.fasta
-REGION_BED=/g/data/kr68/neysa/fshd_pipeline/inputs/d4z4_region.chm13.bed
-PLAM_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/pLAM.fasta
-SEQ_4QB=/g/data/kr68/neysa/fshd_pipeline/inputs/4qB_down.fa
-PROBES=/g/data/kr68/neysa/fshd_pipeline/inputs/probes.fasta
+REF=/g/data/kr68/genome/hs1.fa           # CHANGE TO YOUR REFERENCE GENOME PATH
+FEATURES_FASTA=inputs/features.fasta
+REGION_BED=inputs/d4z4_region.chm13.bed
+PLAM_FASTA=inputs/pLAM.fasta
+SEQ_4QB=inputs/4qB_down.fa
+PROBES=inputs/probes.fasta
 PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
-HAPLOTYPE_REFS=/g/data/kr68/neysa/fshd_pipeline/inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
-REPEATS_FASTA=/g/data/kr68/neysa/fshd_pipeline/inputs/dux4.gene_complete_genbank_20241127.reformatted.fasta
+HAPLOTYPE_REFS=inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
+REPEATS_FASTA=inputs/dux4.gene_complete_genbank_20241127.reformatted.fasta
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -44,8 +44,8 @@ mkdir -p "$OUTDIR"
 echo "MERYL"
 # Define meryl outputs relative to the reference genome directory
 REF_NAME=$(basename $REF .fa)
-MERYL_DB="/g/data/kr68/neysa/fshd_pipeline/inputs/merylDB_${REF_NAME}"
-REPETITIVE_REGIONS="/g/data/kr68/neysa/fshd_pipeline/inputs/${REF_NAME}_repetitive_k15.txt"
+MERYL_DB="inputs/merylDB_${REF_NAME}"
+REPETITIVE_REGIONS="inputs/${REF_NAME}_repetitive_k15.txt"
 
 # Step 1: Pre-compute k-mer frequency (only if meryl output does not exist)
 if [ ! -d "$MERYL_DB" ]; then
@@ -82,13 +82,13 @@ echo "Converting BAM to BED"
 bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${PREFIX}_reads_of_interest.bed"
 
 # map features
-/g/data/kr68/neysa/fshd_pipeline/helper/minimap_features.sh "$OUTDIR" "$PREFIX" "$INPUT_FASTA"
+./helper/minimap_features.sh "$OUTDIR" "$PREFIX" "$INPUT_FASTA"
 
 echo "Converting PSL to BED"
  ${PSLTOBED} "${OUTDIR}/${PREFIX}_mapped_features.psl" "${OUTDIR}/${PREFIX}_mapped_features.bed"
  
 # Map pLAM
-/g/data/kr68/neysa/fshd_pipeline/helper/find_pLAM.sh "${OUTDIR}" "${PREFIX}"
+./helper/find_pLAM.sh "${OUTDIR}" "${PREFIX}"
 
 sort "${OUTDIR}/${PREFIX}_mapped_features.bed" | uniq > "${OUTDIR}/${PREFIX}_mapped_features_unique.bed"
 mv "${OUTDIR}/${PREFIX}_mapped_features_unique.bed" "${OUTDIR}/${PREFIX}_mapped_features.bed"
@@ -142,7 +142,7 @@ rm "${aligned_bams[@]}" "${aligned_bams[@]/%.bam/.bam.bai}"
 
 # Step 8: Parse PSL to generate a summary table
 echo "Parsing PSL to generate summary table"
-python3 /g/data/kr68/neysa/fshd_pipeline/helper/read_classification.py \
+python3 helper/read_classification.py \
     --psl "${OUTDIR}/${PREFIX}_mapped_features.psl" \
     --bed "${OUTDIR}/${PREFIX}_reads_of_interest.bed" \
     --output "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
@@ -152,7 +152,7 @@ python3 /g/data/kr68/neysa/fshd_pipeline/helper/read_classification.py \
 
 ## Step 12: Generate ordered alignment sequences
 echo "Generating ordered alignment sequences"
-alignment_script="/g/data/kr68/neysa/fshd_pipeline/helper/alignment_order_clipping.py"
+alignment_script="helper/alignment_order_clipping.py"
 
 # Run the alignment order script
 python3 "$alignment_script" \
@@ -165,7 +165,7 @@ python3 "$alignment_script" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" 
 
 # Unify features and repeats into a single bed and add colour
-python3 /g/data/kr68/neysa/fshd_pipeline/helper/add_colors_to_bed.py \
+python3 helper/add_colors_to_bed.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --features_bed "${OUTDIR}/${PREFIX}_mapped_features.bed" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
@@ -173,5 +173,5 @@ python3 /g/data/kr68/neysa/fshd_pipeline/helper/add_colors_to_bed.py \
     --output_bed "${OUTDIR}/${PREFIX}_all_features.bed"
     
 # reannotate distal haplotype when identified as the 4qA long haplotype (DUX4L)
-/g/data/kr68/neysa/fshd_pipeline/helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
+./helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
 

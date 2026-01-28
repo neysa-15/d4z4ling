@@ -249,8 +249,8 @@ def fshd1_individual_read_status(df, output_file):
 #     # Save the updated main TSV file, replacing empty values with "NA"
 #     df.fillna("NA").to_csv(output_file, sep="\t", index=False)
 
-def extract_fshd1_status(summary_df, fshd1_status_tsv):
-    template = pd.read_csv("inputs/fshd1_status_template.tsv", sep="\t")
+def extract_fshd1_status(summary_df, fshd1_status_tsv, status_template_tsv):
+    template = pd.read_csv(status_template_tsv, sep="\t")
 
     result = template.copy()
     result["Count"] = 0
@@ -281,6 +281,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", required=True, help="Path to save the updated main TSV file.")
     parser.add_argument("--updated_bed", required=True, help="Path to save the updated features BED file.")
     parser.add_argument("--fshd1_read_status_tsv", required=True, help="Path to save fshd1 status tsv")
+    parser.add_argument("--status_template_tsv", required=False, help="Path to fshd1 status template tsv")
 
     # Parse arguments
     args = parser.parse_args()
@@ -292,13 +293,14 @@ if __name__ == "__main__":
     output_file = args.output
     updated_bed_file = args.updated_bed
     fshd1_status_tsv = args.fshd1_read_status_tsv
+    status_template_tsv = args.status_template_tsv
 
     summary_df = methylation_summary(summary_file, features_file, methylation_file, output_file, updated_bed_file)
     summary_df = fshd1_individual_read_status(summary_df, output_file)
     # fshd2_individual_read_status(summary_df, output_file)
 
     # Write status count to table
-    extract_fshd1_status(summary_df, fshd1_status_tsv)
+    extract_fshd1_status(summary_df, fshd1_status_tsv, status_template_tsv)
 
     summary_df.fillna("NA").to_csv(output_file, sep='\t', index=False)
 

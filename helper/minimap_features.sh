@@ -77,7 +77,7 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_mapped_features.bam" > "${OUTDIR}/${PR
 # convert bam -> sam -> psl
 samtools view -h "${OUTDIR}/${PREFIX}_mapped_features.bam" > "${OUTDIR}/${PREFIX}_mapped_features.merged.sam"
 
-python3 /g/data/kr68/neysa/fshd_pipeline/helper/sam2psl.py \
+python3 helper/sam2psl.py \
     -i "${OUTDIR}/${PREFIX}_mapped_features.merged.sam" \
     -o "${OUTDIR}/${PREFIX}_mapped_features.merged.psl"
 
