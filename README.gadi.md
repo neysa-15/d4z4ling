@@ -1,18 +1,18 @@
 # d4z4ling set up for NCI user
 
 ## What is NCI?
-NCI is Australia's National Computational Infrastructure. For more information: (https://nci.org.au/about-us/who-we-are).
+NCI is Australia's National Computational Infrastructure, a supercomputing facility used by researchers accross Australia. For more information: (https://nci.org.au/about-us/who-we-are).
 
 ## NCI Pre-requisite
 Request to be in if89 project on NCI website 
 
-Add this to your \~/.bash\_profile once approved to project
+Add this to your `~/.bash_profile` once approved to the project
 ```
 module use -a /g/data/if89/apps/modulefiles
 ```
 
 ## Installation
-Load python3 (NCI users):
+Load python3:
 ```
 module unload python3
 module load python3/3.12.1
@@ -28,6 +28,18 @@ pip install -r requirements.txt
 ```
 
 ## How to run
+
+Change at least these two config in `nci_run.sh`:
+```
+#PBS -P {YOUR PROJECT}
+#PBS -l storage=gdata/{YOUR PROJECT}+gdata/if89+scratch/{YOUR PROJECT}
+```
+
+Run minimap2 reference indexing for script input (For efficiency purposes when running for multiple samples to the same reference)
+```
+module load minimap2
+minimap2 -d inputs/hs1.mmi {Path to chm13 fasta}
+```
 
 Last line of `nci_run.sh` should be custom edited depending on the samples  
 Required field:
