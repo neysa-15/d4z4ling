@@ -23,9 +23,6 @@ module load bedtools/2.31.0
 OUTDIR=$1
 PREFIX=$2
 
-# PREFIX=R240059 #AS2603 JURA89
-# OUTDIR=/g/data/kr68/fshd/results_phased_assembly/${PREFIX}/${PREFIX}_hap2
-
 repeat_threshold=2640 # 80% of 3300 bp
 
 # Take reads of interest that is labeled "Complete" or "Partial distal"
@@ -123,7 +120,7 @@ echo "✅ Extracted sequences written to $EXTRACTED_SEQUENCE"
 export BLASTDB_LMDB_MAP_SIZE=200000000
 
 # BLAST distal copy to DUX4 sequence
-DUX4_SEQUENCES=/g/data/kr68/neysa/fshd_pipeline/inputs/dux4_genbank.fasta
+DUX4_SEQUENCES=inputs/dux4_genbank.fasta
 DUX4_DB=${OUTDIR}/${PREFIX}_db
 BLAST_RESULTS=${OUTDIR}/${PREFIX}_dux4.blast.tsv
 makeblastdb -in "${DUX4_SEQUENCES}" -dbtype nucl -out ${DUX4_DB}
