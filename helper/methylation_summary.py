@@ -134,39 +134,50 @@ def methylation_summary(summary_file, features_file, methylation_file, output_fi
         # if read_id == "ea060016-69ea-44a9-9ac8-c2ce34195111":
         #     print(read_features)
 
+        if ("distal" in row["ReadLabel"]) or ("Complete" in row["ReadLabel"]):
+            curr_strand = row["strand"]
+            strand_read_features = read_features[read_features["Strand"] == curr_strand]
+
+            # Then take the last copy of the d4z4 repeat
+            # d4z4_{max} if strand is + and d4z4_1 if strand is -
+            distal_start, distal_end = get_distal_d4z4_coords(strand_read_features)
+
+            if distal_start is not None and distal_end is not None:
+                summary_df = calculate_distal_copy_methylation(idx, summary_df, read_methylation, distal_start, distal_end)
+
         # Check if pLAM is available for this read
-        if row["pLAM_mapped"]:
-            plam_coords = row["pLAM_coords"]
-            if pd.notna(plam_coords):
-                plam_start, plam_end = map(int, plam_coords.split("-"))
+        # if row["pLAM_mapped"]:
+        #     plam_coords = row["pLAM_coords"]
+        #     if pd.notna(plam_coords):
+        #         plam_start, plam_end = map(int, plam_coords.split("-"))
 
-                # Find the d4z4 repeat that overlaps with the pLAM
-                overlapping_d4z4 = read_features[(read_features["Start"] <= plam_end) & (read_features["End"] >= plam_start)]
+        #         # Find the d4z4 repeat that overlaps with the pLAM
+        #         overlapping_d4z4 = read_features[(read_features["Start"] <= plam_end) & (read_features["End"] >= plam_start)]
 
-                if not overlapping_d4z4.empty:
-                    # If a d4z4 repeat overlaps the pLAM, calculate CpG statistics for it
-                    d4z4_start, d4z4_end = overlapping_d4z4.iloc[0]["Start"], overlapping_d4z4.iloc[0]["End"]
+        #         if not overlapping_d4z4.empty:
+        #             # If a d4z4 repeat overlaps the pLAM, calculate CpG statistics for it
+        #             d4z4_start, d4z4_end = overlapping_d4z4.iloc[0]["Start"], overlapping_d4z4.iloc[0]["End"]
 
-                else:
-                    # If no d4z4 repeat overlaps, find the closest d4z4 repeat
-                    d4z4_start, d4z4_end = find_closest_coordinates(features_df, read_id, read_features, plam_start, plam_end)
+        #         else:
+        #             # If no d4z4 repeat overlaps, find the closest d4z4 repeat
+        #             d4z4_start, d4z4_end = find_closest_coordinates(features_df, read_id, read_features, plam_start, plam_end)
 
-                summary_df = calculate_distal_copy_methylation(idx, summary_df, read_methylation, d4z4_start, d4z4_end)
+        #         summary_df = calculate_distal_copy_methylation(idx, summary_df, read_methylation, d4z4_start, d4z4_end)
 
-        else:
-            ###################################################################################
-            # Check if it is partial distal but pLAM not mapping
-            if "distal" in row["ReadLabel"] or row["ReadLabel"] == "Complete 4qB":
-                # choose strands, important for duplex reads
-                curr_strand = row["strand"]
-                strand_read_features = read_features[read_features["Strand"] == curr_strand]
+        # else:
+        #     ###################################################################################
+        #     # Check if it is partial distal but pLAM not mapping
+        #     if "distal" in row["ReadLabel"] or row["ReadLabel"] == "Complete 4qB":
+        #         # choose strands, important for duplex reads
+        #         curr_strand = row["strand"]
+        #         strand_read_features = read_features[read_features["Strand"] == curr_strand]
 
-                # Then take the last copy of the d4z4 repeat
-                # d4z4_{max} if strand is + and d4z4_1 if strand is -
-                distal_start, distal_end = get_distal_d4z4_coords(strand_read_features)
+        #         # Then take the last copy of the d4z4 repeat
+        #         # d4z4_{max} if strand is + and d4z4_1 if strand is -
+        #         distal_start, distal_end = get_distal_d4z4_coords(strand_read_features)
 
-                if distal_start is not None and distal_end is not None:
-                    summary_df = calculate_distal_copy_methylation(idx, summary_df, read_methylation, distal_start, distal_end)
+        #         if distal_start is not None and distal_end is not None:
+        #             summary_df = calculate_distal_copy_methylation(idx, summary_df, read_methylation, distal_start, distal_end)
 
     # Save the updated features DataFrame to a new BED file
     features_df.to_csv(updated_bed_file, sep="\t", index=False, header=False)

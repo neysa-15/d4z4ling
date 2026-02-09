@@ -297,9 +297,6 @@ def get_distal_d4z4_coords(df):
         # Get d4z4_1, or fallback to min if missing
         distal_d4z4 = df[df["d4z4_num"] == 1].iloc[0] if (df["d4z4_num"] == 1).any() else df.loc[df["d4z4_num"].idxmin()]
 
-        # if distal_d4z4["chrom"] in ["75b39b9e-cf2e-4951-b17d-9fa99b574743", "e9a1461e-33a2-490a-87c3-e6a84ccb54b5", "455a4512-9eca-43b9-9a4d-bd2532290ac0", "64bd6ebb-33b5-43ab-81fc-99aa8ec384e1", "ab71fe43-3a58-4eeb-80ed-7a5c1f166763", "1dc77c65-064e-421f-a5f0-e61e70be4789"]:
-        #     print(f"d4z4 num originally {distal_d4z4["d4z4_num"]}")
-
         # size = distal_d4z4["BlockSizes"].split(",")[0]
         size = distal_d4z4["end"] - distal_d4z4["start"]
         if int(size) < repeat_threshold:
@@ -307,12 +304,6 @@ def get_distal_d4z4_coords(df):
             distal_copy = distal_d4z4["d4z4_num"] + 1
             distal_d4z4 = df[df["d4z4_num"] == distal_copy].iloc[0] if (df["d4z4_num"] == distal_copy).any() else df.loc[df["d4z4_num"].idxmin()]
 
-        # # BP0703
-        # if distal_d4z4["chrom"] in ["75b39b9e-cf2e-4951-b17d-9fa99b574743", "e9a1461e-33a2-490a-87c3-e6a84ccb54b5", "455a4512-9eca-43b9-9a4d-bd2532290ac0", "64bd6ebb-33b5-43ab-81fc-99aa8ec384e1", "ab71fe43-3a58-4eeb-80ed-7a5c1f166763", "1dc77c65-064e-421f-a5f0-e61e70be4789"]:
-        #     print(f"distal_d4z4: {distal_d4z4}")
-        #     print(f"size {size}, repeat_threshold {repeat_threshold}")        
-
-    # print(df["chrom"].iloc[0], strand, distal_d4z4["start"], distal_d4z4["end"])
     return strand, distal_d4z4["start"], distal_d4z4["end"]
 
 def refine_read_label(main_tsv, repeats_bed, fasta_file):
@@ -479,14 +470,18 @@ def filter_d4z4_bed(bed_file):
     for key, records in groups.items():
         kept = []
         for rec in records:
-            start, end = int(rec[1]), int(rec[2])
-            contained = False
-            for other in kept:
-                o_start, o_end = int(other[1]), int(other[2])
-                if start >= o_start and end <= o_end:
-                    contained = True
-                    break
-            if not contained:
+            if re.search(r"d4z4_", rec[3]) and "_chr4_proximal" not in rec[3]:
+                start, end = int(rec[1]), int(rec[2])
+                contained = False
+                for other in kept:
+                    o_start, o_end = int(other[1]), int(other[2])
+                    if start >= o_start and end <= o_end:
+                        contained = True
+                        break
+                if not contained:
+                    kept.append(rec)
+            else:
+                # Not repeats
                 kept.append(rec)
         filtered_lines.extend(kept)
 
@@ -495,8 +490,13 @@ def filter_d4z4_bed(bed_file):
     final_lines = []
     for fields in filtered_lines:
         query = fields[0]
-        counters[query] += 1
-        fields[3] = f"{fields[3]}{counters[query]}"
+        if re.search(r"d4z4_", fields[3]) and "_chr4_proximal" not in fields[3]:
+            # update anything after "_" to the counter
+            counters[query] += 1
+            if re.search(r"d4z4_\d+$", fields[3]):
+                fields[3] = re.sub(r"_\d+$", f"_{counters[query]}", fields[3])
+            else:
+                fields[3] = re.sub(r"_", f"_{counters[query]}", fields[3])
         final_lines.append("\t".join(fields))
 
     # Write output
@@ -534,15 +534,16 @@ if __name__ == "__main__":
 
     # Process each unique read ID and generate outputs
     for read_id in unique_read_ids:
-        #print(f"Processing read ID: {read_id}")
         process_bam(args.bam, read_id, args.fasta, args.output_table, args.xapi_bed, args.blni_bed, args.repeats_bed)
     
     print(f"Alignment details table generated: {args.output_table}")
 
     # Count sensitive repeats
+    print("COUNTING SENSITIVE REPEATS...")
     d4z4_table = read_tsv(args.output_table)
     xapi_counts, blni_counts = count_sensitive_repeats(d4z4_table)
 
+    print("FILTERING D4Z4 BED FILE...")
     filter_d4z4_bed(args.repeats_bed)
 
     # Update the main TSV file

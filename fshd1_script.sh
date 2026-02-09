@@ -185,7 +185,7 @@ samtools index "$merged_bam"
 rm "${aligned_bams[@]}" "${aligned_bams[@]/%.bam/.bam.bai}"
 
 # Step 8: Parse PSL to generate a summary table
-echo "Parsing PSL to generate summary table"
+echo "Parsing PSL to generate summary table" 
 python3 helper/read_classification.py \
     --psl "${OUTDIR}/${PREFIX}_mapped_features.psl" \
     --bed "${OUTDIR}/${PREFIX}_reads_of_interest.bed" \
@@ -245,6 +245,15 @@ python3 helper/add_colors_to_bed.py \
 
 # reannotate distal haplotype when identified as the 4qA long haplotype (DUX4L)
 ./helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
+
+# Check for overlapping repeats after distal haplotype re-annotation
+ANNOTATED_BED="${OUTDIR}/${PREFIX}_all_features.bed"
+python3 -c "
+from helper import alignment_order_clipping
+alignment_order_clipping.filter_d4z4_bed(
+    '${ANNOTATED_BED}'
+)
+" 2>&1
 
 samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
     samtools fastq -TMM,ML - | minimap2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
