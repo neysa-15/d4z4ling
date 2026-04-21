@@ -1,0 +1,536 @@
+Loading python3/3.12.1
+  Loading requirement: intel-mkl/2023.2.0
+[M::bam2fq_mainloop] discarded 0 singletons
+[M::bam2fq_mainloop] processed 21 reads
+[M::main::12.868*0.71] loaded/built the index for 25 target sequence(s)
+[M::mm_mapopt_update::14.375*0.74] mid_occ = 892
+[M::mm_idx_stat] kmer size: 15; skip: 10; is_hpc: 0; #seq: 25
+[M::mm_idx_stat::15.175*0.76] distinct minimizers: 100277218 (38.70% are singletons); average occurrences: 5.856; average spacing: 5.308; total length: 3117292070
+[M::worker_pipeline::21.294*2.99] mapped 21 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x map-ont -a -t 48 /g/data/kr68/neysa/fshd_pipeline/inputs/hs1.mmi tests/result_HG01811/HG01811.ONT.R10.LSK114.dorado090_sup_5mCG_5hmCG_v500.subsetted.unmapped.fastq
+[M::main] Real time: 21.534 sec; CPU: 63.917 sec; Peak RSS: 9.024 GB
+[M::mm_idx_gen::0.054*0.50] reading downweighted kmers
+[M::mm_idx_gen::0.135*0.46] collected downweighted kmers, no. of kmers read=66872
+[M::mm_idx_gen::0.135*0.46] saved the kmers in a bloom filter: hash functions=2 and size=961464 
+[M::mm_idx_gen::114.167*1.16] collected minimizers
+[M::mm_idx_gen::117.187*1.46] sorted minimizers
+[M::main::117.189*1.46] loaded/built the index for 25 target sequence(s)
+[M::main::117.189*1.46] running winnowmap in SV-aware mode
+[M::main::117.189*1.46] stage1-specific parameters minP:2000, incP:2.83, maxP:16000, sample:2000, min-qlen:10000, min-qcov:0.5, min-mapq:5, mid-occ:5000
+[M::main::117.189*1.46] stage2-specific parameters s2_bw:2000, s2_zdropinv:25
+[M::mm_idx_stat] kmer size: 15; skip: 50; is_hpc: 0; #seq: 25
+[M::mm_idx_stat::117.445*1.46] distinct minimizers: 23616987 (41.30% are singletons); average occurrences: 5.279; average spacing: 25.003
+[M::bam2fq_mainloop] discarded 0 singletons
+[M::bam2fq_mainloop] processed 21 reads
+[M::worker_pipeline::121.679*2.06] mapped 21 sequences
+[M::main] Version: 2.03, pthreads=48, omp_threads=3
+[M::main] CMD: winnowmap -W inputs/hs1_repetitive_k15.txt -Y -y -ax map-ont -t 48 /g/data/kr68/genome/hs1.fa -
+[M::main] Real time: 121.841 sec; CPU: 250.753 sec; Peak RSS: 7.152 GB
+[M::bam2fq_mainloop] discarded 0 singletons
+[M::bam2fq_mainloop] processed 21 reads
+[M::mm_idx_gen::0.006*1.49] collected minimizers
+[M::mm_idx_gen::0.009*1.35] sorted minimizers
+[M::main::0.009*1.35] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.009*1.33] mid_occ = 500
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.010*1.31] distinct minimizers: 3392 (86.59% are singletons); average occurrences: 1.766; average spacing: 9.380; total length: 56193
+[M::worker_pipeline::0.631*0.03] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_5a4381a2-cb34-46af-970f-97b4d2ed917b.fa inputs/features.fasta
+[M::main] Real time: 0.632 sec; CPU: 0.021 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.007*1.46] collected minimizers
+[M::mm_idx_gen::0.011*1.29] sorted minimizers
+[M::main::0.011*1.29] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.011*1.29] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.011*1.27] distinct minimizers: 5661 (87.02% are singletons); average occurrences: 1.658; average spacing: 5.988; total length: 56193
+[M::worker_pipeline::0.032*0.47] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_5a4381a2-cb34-46af-970f-97b4d2ed917b.fa inputs/short_features.fasta
+[M::main] Real time: 0.034 sec; CPU: 0.017 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.009*1.42] collected minimizers
+[M::mm_idx_gen::0.012*1.31] sorted minimizers
+[M::main::0.012*1.31] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.012*1.30] mid_occ = 500
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.013*1.28] distinct minimizers: 3595 (86.43% are singletons); average occurrences: 2.725; average spacing: 9.538; total length: 93449
+[M::worker_pipeline::0.016*1.22] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_b2fe003d-ed38-42df-85fd-b300008d5b00.fa inputs/features.fasta
+[M::main] Real time: 0.018 sec; CPU: 0.021 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.009*1.39] collected minimizers
+[M::mm_idx_gen::0.014*1.27] sorted minimizers
+[M::main::0.014*1.27] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.014*1.27] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.015*1.25] distinct minimizers: 5975 (86.91% are singletons); average occurrences: 2.574; average spacing: 6.075; total length: 93449
+[M::worker_pipeline::0.015*1.24] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_b2fe003d-ed38-42df-85fd-b300008d5b00.fa inputs/short_features.fasta
+[M::main] Real time: 0.018 sec; CPU: 0.021 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.008*1.46] collected minimizers
+[M::mm_idx_gen::0.012*1.33] sorted minimizers
+[M::main::0.012*1.33] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.012*1.31] mid_occ = 500
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.013*1.30] distinct minimizers: 4095 (88.01% are singletons); average occurrences: 2.268; average spacing: 9.483; total length: 88092
+[M::worker_pipeline::0.017*1.22] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_2a781218-573e-4f7c-bd7e-a3b23bb52dae.fa inputs/features.fasta
+[M::main] Real time: 0.018 sec; CPU: 0.022 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.009*1.35] collected minimizers
+[M::mm_idx_gen::0.014*1.23] sorted minimizers
+[M::main::0.014*1.23] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.014*1.23] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.015*1.22] distinct minimizers: 6820 (88.28% are singletons); average occurrences: 2.137; average spacing: 6.044; total length: 88092
+[M::worker_pipeline::0.015*1.20] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_2a781218-573e-4f7c-bd7e-a3b23bb52dae.fa inputs/short_features.fasta
+[M::main] Real time: 0.018 sec; CPU: 0.021 sec; Peak RSS: 0.005 GB
+[M::mm_idx_gen::0.007*1.60] collected minimizers
+[M::mm_idx_gen::0.010*1.41] sorted minimizers
+[M::main::0.010*1.41] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.010*1.39] mid_occ = 500
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.011*1.37] distinct minimizers: 3724 (87.51% are singletons); average occurrences: 1.903; average spacing: 8.901; total length: 63091
+[M::worker_pipeline::0.017*1.23] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_481c1799-9be1-4fcc-8bdb-1339809adb28.fa inputs/features.fasta
+[M::main] Real time: 0.019 sec; CPU: 0.022 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.007*1.51] collected minimizers
+[M::mm_idx_gen::0.012*1.31] sorted minimizers
+[M::main::0.012*1.31] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.012*1.31] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.012*1.29] distinct minimizers: 6194 (88.28% are singletons); average occurrences: 1.703; average spacing: 5.982; total length: 63091
+[M::worker_pipeline::0.013*1.27] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_481c1799-9be1-4fcc-8bdb-1339809adb28.fa inputs/short_features.fasta
+[M::main] Real time: 0.015 sec; CPU: 0.019 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.005*1.73] collected minimizers
+[M::mm_idx_gen::0.007*1.54] sorted minimizers
+[M::main::0.007*1.54] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.007*1.51] mid_occ = 50
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.008*1.48] distinct minimizers: 2391 (84.78% are singletons); average occurrences: 1.504; average spacing: 9.961; total length: 35829
+[M::worker_pipeline::0.014*1.25] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_49abc192-0e45-4966-aeb1-771972ee4644.fa inputs/features.fasta
+[M::main] Real time: 0.016 sec; CPU: 0.019 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.005*1.69] collected minimizers
+[M::mm_idx_gen::0.008*1.45] sorted minimizers
+[M::main::0.008*1.45] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.008*1.45] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.009*1.42] distinct minimizers: 4013 (84.77% are singletons); average occurrences: 1.492; average spacing: 5.982; total length: 35829
+[M::worker_pipeline::0.010*1.37] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_49abc192-0e45-4966-aeb1-771972ee4644.fa inputs/short_features.fasta
+[M::main] Real time: 0.011 sec; CPU: 0.015 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.005*1.79] collected minimizers
+[M::mm_idx_gen::0.006*1.59] sorted minimizers
+[M::main::0.006*1.58] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.007*1.55] mid_occ = 50
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.007*1.52] distinct minimizers: 1933 (82.88% are singletons); average occurrences: 1.395; average spacing: 9.811; total length: 26451
+[M::worker_pipeline::0.012*1.28] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_fc397b46-5dca-4003-874b-d159cb08b998.fa inputs/features.fasta
+[M::main] Real time: 0.014 sec; CPU: 0.017 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.005*1.67] collected minimizers
+[M::mm_idx_gen::0.007*1.45] sorted minimizers
+[M::main::0.007*1.44] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.007*1.44] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.008*1.41] distinct minimizers: 3229 (83.43% are singletons); average occurrences: 1.380; average spacing: 5.936; total length: 26451
+[M::worker_pipeline::0.009*1.37] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_fc397b46-5dca-4003-874b-d159cb08b998.fa inputs/short_features.fasta
+[M::main] Real time: 0.010 sec; CPU: 0.013 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.007*1.46] collected minimizers
+[M::mm_idx_gen::0.009*1.36] sorted minimizers
+[M::main::0.009*1.36] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.010*1.34] mid_occ = 53
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.010*1.33] distinct minimizers: 2654 (83.87% are singletons); average occurrences: 2.924; average spacing: 9.937; total length: 77100
+[M::worker_pipeline::0.014*1.24] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_dc28d1e7-6d3c-4eaa-adb3-1645d4c13975.fa inputs/features.fasta
+[M::main] Real time: 0.015 sec; CPU: 0.018 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.008*1.44] collected minimizers
+[M::mm_idx_gen::0.012*1.32] sorted minimizers
+[M::main::0.012*1.32] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.012*1.32] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.012*1.30] distinct minimizers: 4475 (84.63% are singletons); average occurrences: 2.844; average spacing: 6.058; total length: 77100
+[M::worker_pipeline::0.013*1.28] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_dc28d1e7-6d3c-4eaa-adb3-1645d4c13975.fa inputs/short_features.fasta
+[M::main] Real time: 0.015 sec; CPU: 0.018 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.006*1.61] collected minimizers
+[M::mm_idx_gen::0.009*1.44] sorted minimizers
+[M::main::0.009*1.43] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.009*1.41] mid_occ = 213
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.010*1.39] distinct minimizers: 3164 (85.94% are singletons); average occurrences: 1.818; average spacing: 9.777; total length: 56247
+[M::worker_pipeline::0.013*1.28] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_4a22fe57-dfa4-46a7-9556-d9f49cebe8f1.fa inputs/features.fasta
+[M::main] Real time: 0.015 sec; CPU: 0.018 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.007*1.54] collected minimizers
+[M::mm_idx_gen::0.011*1.35] sorted minimizers
+[M::main::0.011*1.35] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.011*1.35] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.011*1.33] distinct minimizers: 5260 (86.31% are singletons); average occurrences: 1.775; average spacing: 6.023; total length: 56247
+[M::worker_pipeline::0.012*1.30] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_4a22fe57-dfa4-46a7-9556-d9f49cebe8f1.fa inputs/short_features.fasta
+[M::main] Real time: 0.014 sec; CPU: 0.018 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.006*1.64] collected minimizers
+[M::mm_idx_gen::0.007*1.48] sorted minimizers
+[M::main::0.007*1.48] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.008*1.46] mid_occ = 50
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.008*1.44] distinct minimizers: 2318 (83.35% are singletons); average occurrences: 2.040; average spacing: 9.919; total length: 46895
+[M::worker_pipeline::0.015*1.24] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_b8123e68-f15e-48f8-ab7e-e8b8ad741a3f.fa inputs/features.fasta
+[M::main] Real time: 0.016 sec; CPU: 0.019 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.006*1.47] collected minimizers
+[M::mm_idx_gen::0.009*1.33] sorted minimizers
+[M::main::0.009*1.33] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.009*1.33] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.010*1.31] distinct minimizers: 3885 (83.99% are singletons); average occurrences: 2.013; average spacing: 5.996; total length: 46895
+[M::worker_pipeline::0.011*1.28] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_b8123e68-f15e-48f8-ab7e-e8b8ad741a3f.fa inputs/short_features.fasta
+[M::main] Real time: 0.012 sec; CPU: 0.015 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.006*1.55] collected minimizers
+[M::mm_idx_gen::0.009*1.38] sorted minimizers
+[M::main::0.009*1.38] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.009*1.36] mid_occ = 500
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.010*1.35] distinct minimizers: 3420 (86.67% are singletons); average occurrences: 1.881; average spacing: 9.408; total length: 60523
+[M::worker_pipeline::0.016*1.21] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_62133091-1a78-4b14-bff7-446c02724150.fa inputs/features.fasta
+[M::main] Real time: 0.018 sec; CPU: 0.021 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.007*1.50] collected minimizers
+[M::mm_idx_gen::0.011*1.32] sorted minimizers
+[M::main::0.011*1.32] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.011*1.32] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.012*1.30] distinct minimizers: 5705 (87.01% are singletons); average occurrences: 1.769; average spacing: 5.998; total length: 60523
+[M::worker_pipeline::0.013*1.28] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_62133091-1a78-4b14-bff7-446c02724150.fa inputs/short_features.fasta
+[M::main] Real time: 0.015 sec; CPU: 0.018 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.009*1.44] collected minimizers
+[M::mm_idx_gen::0.011*1.33] sorted minimizers
+[M::main::0.011*1.33] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.012*1.31] mid_occ = 500
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.012*1.30] distinct minimizers: 3630 (86.97% are singletons); average occurrences: 2.771; average spacing: 9.685; total length: 97420
+[M::worker_pipeline::0.016*1.23] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_d781e832-f3ed-4895-9113-664b67a6bac3.fa inputs/features.fasta
+[M::main] Real time: 0.018 sec; CPU: 0.021 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.010*1.33] collected minimizers
+[M::mm_idx_gen::0.015*1.23] sorted minimizers
+[M::main::0.015*1.22] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.015*1.22] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.015*1.21] distinct minimizers: 6030 (87.13% are singletons); average occurrences: 2.660; average spacing: 6.075; total length: 97420
+[M::worker_pipeline::0.016*1.20] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_d781e832-f3ed-4895-9113-664b67a6bac3.fa inputs/short_features.fasta
+[M::main] Real time: 0.018 sec; CPU: 0.021 sec; Peak RSS: 0.005 GB
+[M::mm_idx_gen::0.006*1.53] collected minimizers
+[M::mm_idx_gen::0.008*1.42] sorted minimizers
+[M::main::0.008*1.42] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.008*1.40] mid_occ = 50
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.008*1.39] distinct minimizers: 1902 (78.02% are singletons); average occurrences: 3.025; average spacing: 9.960; total length: 57300
+[M::worker_pipeline::0.013*1.23] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_b6021d30-7331-4b37-9940-6f22f7078308.fa inputs/features.fasta
+[M::main] Real time: 0.014 sec; CPU: 0.017 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.007*1.43] collected minimizers
+[M::mm_idx_gen::0.009*1.32] sorted minimizers
+[M::main::0.010*1.32] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.010*1.32] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.010*1.30] distinct minimizers: 3237 (78.90% are singletons); average occurrences: 2.945; average spacing: 6.010; total length: 57300
+[M::worker_pipeline::0.011*1.28] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_b6021d30-7331-4b37-9940-6f22f7078308.fa inputs/short_features.fasta
+[M::main] Real time: 0.012 sec; CPU: 0.015 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.006*2.35] collected minimizers
+[M::mm_idx_gen::0.009*1.97] sorted minimizers
+[M::main::0.009*1.96] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.009*1.92] mid_occ = 500
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.010*1.87] distinct minimizers: 3198 (86.24% are singletons); average occurrences: 2.036; average spacing: 9.489; total length: 61781
+[M::worker_pipeline::0.013*1.64] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_6ec31b8e-3ff4-4618-ac86-4de1f5b5debf.fa inputs/features.fasta
+[M::main] Real time: 0.015 sec; CPU: 0.023 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.007*1.54] collected minimizers
+[M::mm_idx_gen::0.011*1.35] sorted minimizers
+[M::main::0.011*1.35] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.011*1.35] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.012*1.33] distinct minimizers: 5293 (86.42% are singletons); average occurrences: 1.933; average spacing: 6.039; total length: 61781
+[M::worker_pipeline::0.012*1.31] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_6ec31b8e-3ff4-4618-ac86-4de1f5b5debf.fa inputs/short_features.fasta
+[M::main] Real time: 0.014 sec; CPU: 0.018 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.006*1.64] collected minimizers
+[M::mm_idx_gen::0.008*1.44] sorted minimizers
+[M::main::0.008*1.44] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.009*1.41] mid_occ = 500
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.009*1.39] distinct minimizers: 3386 (87.03% are singletons); average occurrences: 1.565; average spacing: 9.240; total length: 48952
+[M::worker_pipeline::0.015*1.23] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_b9c8638d-0665-4a1d-8f5f-afb779dcbd34.fa inputs/features.fasta
+[M::main] Real time: 0.017 sec; CPU: 0.021 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.006*1.58] collected minimizers
+[M::mm_idx_gen::0.010*1.36] sorted minimizers
+[M::main::0.010*1.36] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.010*1.36] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.011*1.34] distinct minimizers: 5638 (87.81% are singletons); average occurrences: 1.447; average spacing: 5.999; total length: 48952
+[M::worker_pipeline::0.012*1.31] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_b9c8638d-0665-4a1d-8f5f-afb779dcbd34.fa inputs/short_features.fasta
+[M::main] Real time: 0.014 sec; CPU: 0.017 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.014*1.26] collected minimizers
+[M::mm_idx_gen::0.020*1.18] sorted minimizers
+[M::main::0.020*1.18] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.021*1.17] mid_occ = 50
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.022*1.16] distinct minimizers: 10164 (93.83% are singletons); average occurrences: 1.891; average spacing: 9.422; total length: 181078
+[M::worker_pipeline::0.031*1.11] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_ef8c78ff-486a-4cf1-b0ab-9fec55c88408.fa inputs/features.fasta
+[M::main] Real time: 0.033 sec; CPU: 0.036 sec; Peak RSS: 0.005 GB
+[M::mm_idx_gen::0.015*1.22] collected minimizers
+[M::mm_idx_gen::0.024*1.14] sorted minimizers
+[M::main::0.024*1.14] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.024*1.14] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.025*1.13] distinct minimizers: 17003 (94.18% are singletons); average occurrences: 1.777; average spacing: 5.994; total length: 181078
+[M::worker_pipeline::0.026*1.12] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_ef8c78ff-486a-4cf1-b0ab-9fec55c88408.fa inputs/short_features.fasta
+[M::main] Real time: 0.030 sec; CPU: 0.033 sec; Peak RSS: 0.006 GB
+[M::mm_idx_gen::0.010*1.38] collected minimizers
+[M::mm_idx_gen::0.014*1.27] sorted minimizers
+[M::main::0.014*1.27] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.015*1.25] mid_occ = 349
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.016*1.24] distinct minimizers: 5424 (87.96% are singletons); average occurrences: 2.364; average spacing: 9.016; total length: 115585
+[M::worker_pipeline::0.024*1.15] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_f0d3d7b6-276f-4f08-ae22-f29371f5b26d.fa inputs/features.fasta
+[M::main] Real time: 0.026 sec; CPU: 0.030 sec; Peak RSS: 0.005 GB
+[M::mm_idx_gen::0.011*1.36] collected minimizers
+[M::mm_idx_gen::0.017*1.23] sorted minimizers
+[M::main::0.017*1.23] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.017*1.23] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.018*1.22] distinct minimizers: 9159 (88.63% are singletons); average occurrences: 2.201; average spacing: 5.734; total length: 115585
+[M::worker_pipeline::0.020*1.20] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_f0d3d7b6-276f-4f08-ae22-f29371f5b26d.fa inputs/short_features.fasta
+[M::main] Real time: 0.022 sec; CPU: 0.026 sec; Peak RSS: 0.005 GB
+[M::mm_idx_gen::0.005*1.68] collected minimizers
+[M::mm_idx_gen::0.008*1.45] sorted minimizers
+[M::main::0.008*1.45] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.009*1.43] mid_occ = 500
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.009*1.41] distinct minimizers: 3464 (87.53% are singletons); average occurrences: 1.594; average spacing: 8.854; total length: 48894
+[M::worker_pipeline::0.015*1.24] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_ea817940-2cf4-4e09-b2ed-bc6ac0de9202.fa inputs/features.fasta
+[M::main] Real time: 0.017 sec; CPU: 0.020 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.006*1.59] collected minimizers
+[M::mm_idx_gen::0.010*1.36] sorted minimizers
+[M::main::0.010*1.36] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.010*1.36] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.011*1.33] distinct minimizers: 5775 (88.07% are singletons); average occurrences: 1.438; average spacing: 5.887; total length: 48894
+[M::worker_pipeline::0.011*1.31] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_ea817940-2cf4-4e09-b2ed-bc6ac0de9202.fa inputs/short_features.fasta
+[M::main] Real time: 0.013 sec; CPU: 0.017 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.006*1.57] collected minimizers
+[M::mm_idx_gen::0.009*1.39] sorted minimizers
+[M::main::0.009*1.39] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.010*1.37] mid_occ = 500
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.010*1.35] distinct minimizers: 3475 (86.56% are singletons); average occurrences: 1.929; average spacing: 9.247; total length: 61980
+[M::worker_pipeline::0.016*1.22] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_42332c78-d2b4-4934-b476-77bbe82d7aac.fa inputs/features.fasta
+[M::main] Real time: 0.018 sec; CPU: 0.022 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.007*1.51] collected minimizers
+[M::mm_idx_gen::0.012*1.32] sorted minimizers
+[M::main::0.012*1.32] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.012*1.32] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.012*1.30] distinct minimizers: 5797 (86.86% are singletons); average occurrences: 1.781; average spacing: 6.004; total length: 61980
+[M::worker_pipeline::0.013*1.28] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_42332c78-d2b4-4934-b476-77bbe82d7aac.fa inputs/short_features.fasta
+[M::main] Real time: 0.015 sec; CPU: 0.019 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.010*1.36] collected minimizers
+[M::mm_idx_gen::0.015*1.24] sorted minimizers
+[M::main::0.015*1.24] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.016*1.23] mid_occ = 50
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.017*1.22] distinct minimizers: 7200 (93.29% are singletons); average occurrences: 1.697; average spacing: 9.613; total length: 117426
+[M::worker_pipeline::0.025*1.14] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_085a9264-4183-4eaa-8caa-bd7de58b21ac.fa inputs/features.fasta
+[M::main] Real time: 0.028 sec; CPU: 0.032 sec; Peak RSS: 0.005 GB
+[M::mm_idx_gen::0.011*1.33] collected minimizers
+[M::mm_idx_gen::0.018*1.20] sorted minimizers
+[M::main::0.018*1.20] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.018*1.20] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.019*1.19] distinct minimizers: 12041 (93.50% are singletons); average occurrences: 1.625; average spacing: 6.002; total length: 117426
+[M::worker_pipeline::0.021*1.18] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_085a9264-4183-4eaa-8caa-bd7de58b21ac.fa inputs/short_features.fasta
+[M::main] Real time: 0.023 sec; CPU: 0.027 sec; Peak RSS: 0.005 GB
+[M::mm_idx_gen::0.008*1.45] collected minimizers
+[M::mm_idx_gen::0.010*1.37] sorted minimizers
+[M::main::0.010*1.37] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.010*1.35] mid_occ = 50
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.010*1.34] distinct minimizers: 1881 (78.42% are singletons); average occurrences: 4.638; average spacing: 9.983; total length: 87104
+[M::worker_pipeline::0.017*1.21] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_a2958f7d-9611-4b37-af38-9149be55fac5.fa inputs/features.fasta
+[M::main] Real time: 0.018 sec; CPU: 0.021 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.009*1.35] collected minimizers
+[M::mm_idx_gen::0.012*1.27] sorted minimizers
+[M::main::0.012*1.27] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.012*1.27] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.012*1.26] distinct minimizers: 3144 (78.88% are singletons); average occurrences: 4.607; average spacing: 6.014; total length: 87104
+[M::worker_pipeline::0.014*1.22] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_a2958f7d-9611-4b37-af38-9149be55fac5.fa inputs/short_features.fasta
+[M::main] Real time: 0.015 sec; CPU: 0.018 sec; Peak RSS: 0.004 GB
+[M::mm_idx_gen::0.008*1.39] collected minimizers
+[M::mm_idx_gen::0.012*1.27] sorted minimizers
+[M::main::0.012*1.27] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.013*1.26] mid_occ = 500
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.013*1.25] distinct minimizers: 4795 (90.05% are singletons); average occurrences: 2.001; average spacing: 9.540; total length: 91538
+[M::worker_pipeline::0.023*1.14] mapped 3 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x asm5 -t 1 -N 10 -a tests/result_HG01811/tmp_read_378fd206-f01b-4453-9d15-00eb9895ac41.fa inputs/features.fasta
+[M::main] Real time: 0.025 sec; CPU: 0.028 sec; Peak RSS: 0.005 GB
+[M::mm_idx_gen::0.009*1.35] collected minimizers
+[M::mm_idx_gen::0.015*1.22] sorted minimizers
+[M::main::0.015*1.22] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.015*1.22] mid_occ = 1000
+[M::mm_idx_stat] kmer size: 21; skip: 11; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.016*1.21] distinct minimizers: 8028 (90.43% are singletons); average occurrences: 1.890; average spacing: 6.032; total length: 91538
+[M::worker_pipeline::0.018*1.18] mapped 1 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -x sr -t 1 -N 10 -a tests/result_HG01811/tmp_read_378fd206-f01b-4453-9d15-00eb9895ac41.fa inputs/short_features.fasta
+[M::main] Real time: 0.020 sec; CPU: 0.023 sec; Peak RSS: 0.005 GB
+/g/data/kr68/neysa/test_github_pull/add_test_data/d4z4ling/helper/sam2psl.py:184: SyntaxWarning: invalid escape sequence '\*'
+  """
+/g/data/kr68/neysa/test_github_pull/add_test_data/d4z4ling/helper/sam2psl.py:227: SyntaxWarning: invalid escape sequence '\T'
+  """
+[INFO][0m 1 primer pair loaded
+[M::mm_idx_gen::0.003*2.47] collected minimizers
+[M::mm_idx_gen::0.005*2.23] sorted minimizers
+[M::main::0.005*2.67] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.006*2.60] mid_occ = 10
+[M::mm_idx_stat] kmer size: 15; skip: 10; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.006*2.54] distinct minimizers: 657 (99.85% are singletons); average occurrences: 1.005; average spacing: 5.352; total length: 3532
+[M::worker_pipeline::0.191*2.47] mapped 17 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 --secondary=no --MD -ax map-ont tests/result_HG01811/4A_reference.fasta tests/result_HG01811/HG01811_4A_reads.fastq
+[M::main] Real time: 0.192 sec; CPU: 0.473 sec; Peak RSS: 0.025 GB
+[M::mm_idx_gen::0.003*2.65] collected minimizers
+[M::mm_idx_gen::0.005*2.75] sorted minimizers
+[M::main::0.005*2.73] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.005*2.66] mid_occ = 10
+[M::mm_idx_stat] kmer size: 15; skip: 10; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.005*2.59] distinct minimizers: 623 (99.52% are singletons); average occurrences: 1.008; average spacing: 5.369; total length: 3372
+[M::worker_pipeline::0.108*2.05] mapped 4 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 --secondary=no --MD -ax map-ont tests/result_HG01811/10A_reference.fasta tests/result_HG01811/HG01811_10A_reads.fastq
+[M::main] Real time: 0.109 sec; CPU: 0.221 sec; Peak RSS: 0.014 GB
+Extracting 085a9264-4183-4eaa-8caa-bd7de58b21ac : 35626-42384 on strand -
+[INFO][0m create or read FASTA index ...
+[INFO][0m read FASTA index from tests/result_HG01811/HG01811_reads_of_interest.fasta.seqkit.fai
+[INFO][0m   21 records loaded from tests/result_HG01811/HG01811_reads_of_interest.fasta.seqkit.fai
+Extracting 378fd206-f01b-4453-9d15-00eb9895ac41 : 34907-41645 on strand -
+[INFO][0m create or read FASTA index ...
+[INFO][0m read FASTA index from tests/result_HG01811/HG01811_reads_of_interest.fasta.seqkit.fai
+[INFO][0m   21 records loaded from tests/result_HG01811/HG01811_reads_of_interest.fasta.seqkit.fai
+Extracting 4a22fe57-dfa4-46a7-9556-d9f49cebe8f1 : 19075-25834 on strand +
+[INFO][0m create or read FASTA index ...
+[INFO][0m read FASTA index from tests/result_HG01811/HG01811_reads_of_interest.fasta.seqkit.fai
+[INFO][0m   21 records loaded from tests/result_HG01811/HG01811_reads_of_interest.fasta.seqkit.fai
+Extracting 6ec31b8e-3ff4-4618-ac86-4de1f5b5debf : 21544-28295 on strand +
+[INFO][0m create or read FASTA index ...
+[INFO][0m read FASTA index from tests/result_HG01811/HG01811_reads_of_interest.fasta.seqkit.fai
+[INFO][0m   21 records loaded from tests/result_HG01811/HG01811_reads_of_interest.fasta.seqkit.fai
+[M::mm_idx_gen::0.046*1.08] collected minimizers
+[M::mm_idx_gen::0.077*1.05] sorted minimizers
+[M::main::0.077*1.05] loaded/built the index for 21 target sequence(s)
+[M::mm_mapopt_update::0.078*1.05] mid_occ = 259
+[M::mm_idx_stat] kmer size: 19; skip: 19; is_hpc: 0; #seq: 21
+[M::mm_idx_stat::0.078*1.05] distinct minimizers: 26905 (66.25% are singletons); average occurrences: 6.153; average spacing: 9.501; total length: 1572928
+[M::bam2fq_mainloop] discarded 0 singletons
+[M::bam2fq_mainloop] processed 21 reads
+[M::worker_pipeline::44.997*1.00] mapped 21 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -t -Y -y -x asm5 -a --secondary=no tests/result_HG01811/HG01811_reads_of_interest.fasta -
+[M::main] Real time: 45.004 sec; CPU: 44.884 sec; Peak RSS: 0.363 GB
+[parse_mod_codes::INFO][1;34m Context not provided for modification code m. Using CG[0m
+[print_view_options::INFO][1;34m Modification code: m, Context: CG[0m
+[view_main] Loading reference genome tests/result_HG01811/HG01811_reads_of_interest.fasta
+[view_main] Reference genome loaded in 0.006 sec
+[view_main] Loading contexts in reference
+[view_main] Reference contexts loaded in 0.014 sec
+[view_main::0.144*1.63] 21 Entries (2.9M bytes) processed	0 Entries (0.0M bytes) skipped
+[view_main] total entries: 21
+[view_main] total bytes: 2.9 M
+[view_main] total skipped entries: 0
+[view_main] total skipped bytes: 0.0 M
+[view_main] total processed entries: 21ld
+[view_main] total processed bytes: 2.9 M
+[view_main] Data loading time: 0.012 sec
+[view_main] Data processing time: 0.017 sec
+[view_main] Data output time: 0.083 sec
+[main] Version: v0.2.0
+[main] CMD: minimod view -c m tests/result_HG01811/HG01811_reads_of_interest.fasta tests/result_HG01811/HG01811_meth_reads.bam
+[main] Real time: 0.146 sec; CPU time: 0.236 sec; Peak RAM: 0.029 GB
+
+/g/data/kr68/neysa/test_github_pull/add_test_data/d4z4ling/fshd1_venv/lib/python3.12/site-packages/plotly/express/_core.py:2065: FutureWarning:
+
+When grouping with a length-1 list-like, you will need to pass a length-1 tuple to get_group in a future version of pandas. Pass `(name,)` instead of `name` to silence this warning.
+
+/g/data/kr68/neysa/test_github_pull/add_test_data/d4z4ling/fshd1_venv/lib/python3.12/site-packages/plotly/express/_core.py:2065: FutureWarning:
+
+When grouping with a length-1 list-like, you will need to pass a length-1 tuple to get_group in a future version of pandas. Pass `(name,)` instead of `name` to silence this warning.
+
+/g/data/kr68/neysa/test_github_pull/add_test_data/d4z4ling/fshd1_venv/lib/python3.12/site-packages/plotly/express/_core.py:2065: FutureWarning:
+
+When grouping with a length-1 list-like, you will need to pass a length-1 tuple to get_group in a future version of pandas. Pass `(name,)` instead of `name` to silence this warning.
+

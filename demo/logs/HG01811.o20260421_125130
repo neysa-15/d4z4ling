@@ -1,0 +1,98 @@
+Processing uBAM file: HG01811 tests/HG01811.ONT.R10.LSK114.dorado090_sup_5mCG_5hmCG_v500.subsetted.unmapped.bam
+Convert ubam/fastq to fastq/ubam
+MERYL
+Meryl database already exists at inputs/merylDB_hs1. Skipping this step.
+Repetitive regions file already exists at inputs/hs1_repetitive_k15.txt. Skipping this step.
+minimap winnowmap
+Generating FASTA from uBAM
+Converting BAM to BED
+Loaded 1572928 letters in 21 sequences
+Searched 200 bases in 1 sequences
+Aligning reads classified to specific haplotypes
+Haplotype-specific alignment complete.
+Merging haplotype-aligned BAM files
+Parsing PSL to generate summary table
+                                  ReadID               GenomeCoords
+0   085a9264-4183-4eaa-8caa-bd7de58b21ac   chr4:193395965-193477457
+1   49abc192-0e45-4966-aeb1-771972ee4644   chr4:193414576-193450374
+2   b8123e68-f15e-48f8-ab7e-e8b8ad741a3f   chr4:193418890-193465980
+3   378fd206-f01b-4453-9d15-00eb9895ac41   chr4:193420998-193476863
+4   f0d3d7b6-276f-4f08-ae22-f29371f5b26d   chr4:193429288-193510857
+5   ef8c78ff-486a-4cf1-b0ab-9fec55c88408   chr4:193429288-193510851
+6   a2958f7d-9611-4b37-af38-9149be55fac5   chr4:193431396-193510857
+7   b6021d30-7331-4b37-9940-6f22f7078308   chr4:193433357-193484472
+8   ea817940-2cf4-4e09-b2ed-bc6ac0de9202   chr4:193442569-193452266
+9   481c1799-9be1-4fcc-8bdb-1339809adb28   chr4:193442773-193464692
+10  62133091-1a78-4b14-bff7-446c02724150   chr4:193445844-193471291
+11  42332c78-d2b4-4934-b476-77bbe82d7aac   chr4:193446131-193471291
+12  fc397b46-5dca-4003-874b-d159cb08b998   chr4:193448342-193467996
+13  5a4381a2-cb34-46af-970f-97b4d2ed917b   chr4:193450097-193471291
+14  b9c8638d-0665-4a1d-8f5f-afb779dcbd34   chr4:193451104-193464692
+15  6ec31b8e-3ff4-4618-ac86-4de1f5b5debf   chr4:193515411-193567334
+16  4a22fe57-dfa4-46a7-9556-d9f49cebe8f1   chr4:193517868-193574669
+17  d781e832-f3ed-4895-9113-664b67a6bac3  chr10:134662052-134758134
+18  b2fe003d-ed38-42df-85fd-b300008d5b00  chr10:134668005-134758134
+19  dc28d1e7-6d3c-4eaa-adb3-1645d4c13975  chr10:134669138-134746429
+20  2a781218-573e-4f7c-bd7e-a3b23bb52dae  chr10:134673482-134758134
+Parsing SSLP BED file: tests/result_HG01811/HG01811_SSLP.bed
+SSLP dict keys: [('49abc192-0e45-4966-aeb1-771972ee4644', '-'), ('b8123e68-f15e-48f8-ab7e-e8b8ad741a3f', '+'), ('ef8c78ff-486a-4cf1-b0ab-9fec55c88408', '-'), ('f0d3d7b6-276f-4f08-ae22-f29371f5b26d', '+'), ('085a9264-4183-4eaa-8caa-bd7de58b21ac', '-')]
+                                 ReadID strand
+0  085a9264-4183-4eaa-8caa-bd7de58b21ac      -
+1  49abc192-0e45-4966-aeb1-771972ee4644      -
+2  b8123e68-f15e-48f8-ab7e-e8b8ad741a3f      +
+3  378fd206-f01b-4453-9d15-00eb9895ac41      -
+4  f0d3d7b6-276f-4f08-ae22-f29371f5b26d      +
+Results saved to tests/result_HG01811/HG01811_mapped_features_summary.tsv
+Generating ordered alignment sequences
+Output file tests/result_HG01811/HG01811_d4z4_units.tsv already exists. Deleting it to start fresh.
+Output file tests/result_HG01811/HG01811_d4z4_repeats.bed already exists. Deleting it to start fresh.
+Alignment details table generated: tests/result_HG01811/HG01811_d4z4_units.tsv
+COUNTING SENSITIVE REPEATS...
+FILTERING D4Z4 BED FILE...
+Main TSV file updated with sensitive repeat counts: tests/result_HG01811/HG01811_mapped_features_summary.tsv
+tests/result_HG01811/HG01811_mapped_features_summary.tsv
+Unified BED file written to tests/result_HG01811/HG01811_all_features.bed
+Take read id of reads with complete and partial distal
+get coordinates and sequence of distal copy and the pLAM
+085a9264-4183-4eaa-8caa-bd7de58b21ac
+378fd206-f01b-4453-9d15-00eb9895ac41
+4a22fe57-dfa4-46a7-9556-d9f49cebe8f1
+6ec31b8e-3ff4-4618-ac86-4de1f5b5debf
+✅ Extracted sequences written to tests/result_HG01811/HG01811_read_distal_seq.fasta
+
+
+Building a new DB, current time: 04/21/2026 12:55:30
+New DB name:   /g/data/kr68/neysa/test_github_pull/add_test_data/d4z4ling/tests/result_HG01811/HG01811_db
+New DB title:  inputs/dux4_genbank.fasta
+Sequence type: Nucleotide
+Keep MBits: T
+Maximum file size: 3000000000B
+Adding sequences from FASTA; added 45 sequences in 0.140429 seconds.
+
+
+0.00
+             FSHD1_status Haplotype  ...                    PolyA Count
+0     Diagnostic/Positive       4qA  ...               Permissive     0
+1     Diagnostic/Negative       4qA  ...                      Any     2
+2     Diagnostic/Negative       4qB  ...  Non-permissive / absent    11
+3  Diagnostic/Conflicting       4qA  ...  Non-permissive / absent     0
+4        Support/Positive       4qA  ...               Permissive     0
+5        Support/Negative       4qA  ...                      Any     2
+6          Non-diagnostic       Any  ...                      Any     6
+
+[7 rows x 7 columns]
+Updated main TSV file saved to tests/result_HG01811/HG01811_methylation_summary.tsv
+Updated features BED file saved to tests/result_HG01811/HG01811_updated_features.bed
+tests/result_HG01811/HG01811_reads_of_interest.chrom.sizes already exists in tests/result_HG01811.
+
+======================================================================================
+                  Resource Usage on 2026-04-21 12:57:15:
+   Job Id:             166581256.gadi-pbs
+   Project:            kr68
+   Exit Status:        0
+   Service Units:      7.89
+   NCPUs Requested:    48                  CPU Time Used: 00:06:35        
+   Memory Requested:   192.0GB               Memory Used: 17.23GB         
+   Walltime Requested: 05:00:00            Walltime Used: 00:04:56        
+   JobFS Requested:    10.0GB                 JobFS Used: 0B              
+======================================================================================
