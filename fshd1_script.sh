@@ -112,6 +112,19 @@ minimap2 -x $MODE -a "$MMI" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
 
 samtools index "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
 
+if [[ $(samtools view -c "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam") -eq 0 ]]; then
+    echo "No reads mapped to the region of interest. Exiting."
+
+    # Remove temp created fastq/ubam
+    if [[ $ubam_exist ]]; then
+        rm "${INPUT_FASTQ}"
+    elif [[ $fastq_exist ]]; then
+        rm "${INPUT_UBAM}"
+    fi
+    
+    exit 0
+fi
+
 # Remap with winnowmap to CHM13
 samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
     samtools fastq -TMM,ML - | \
@@ -279,6 +292,27 @@ python3 helper/methylation_summary.py \
 mv "${OUTDIR}/${PREFIX}_methylation_summary.tsv" "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
 # mv "${OUTDIR}/${PREFIX}_updated_features.bed" "${OUTDIR}/${PREFIX}_all_features.bed"
 
+if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.bed" ]; then
+    echo "No methylation calls found. Exiting."
+
+    # Remove intermediate files
+    if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
+        rm ${OUTDIR}/${PREFIX}_*blast*
+        rm ${OUTDIR}/${PREFIX}_*top*
+        rm ${OUTDIR}/${PREFIX}_*psl
+        rm ${OUTDIR}/${PREFIX}_*d4z4*
+    fi
+
+    # Remove temp created fastq/ubam
+    if [[ $ubam_exist ]]; then
+        rm "${INPUT_FASTQ}"
+    elif [[ $fastq_exist ]]; then
+        rm "${INPUT_UBAM}"
+    fi
+
+    exit 0
+fi
+
 # Check if genome.chrom.sizes exists
 if [ ! -f "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" ]; then
     echo "Creating ${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes in $OUTDIR..."
@@ -296,15 +330,27 @@ fi
 
 # High probability (> 0.75)
 awk '$5 > 0.75 {print $1, $2, $3, $5}' "${OUTDIR}/${PREFIX}_meth_reads.bed" | sort -k1,1 -k2,2n > "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph"
- ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bw"
+if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" ]; then
+    echo "No high probability methylation calls found. Skipping bigWig generation for high probability calls."
+else
+    ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bw"
+fi
 
 # Low probability (< 0.25)
 awk '$5 < 0.25 {print $1, $2, $3, $5}' "${OUTDIR}/${PREFIX}_meth_reads.bed" | sort -k1,1 -k2,2n > "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph"
- ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bw"
+if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" ]; then
+    echo "No low probability methylation calls found. Skipping bigWig generation for low probability calls."
+else
+    ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bw"
+fi
 
 # Undefined (0.25 <= x <= 0.75)
 awk '$5 >= 0.25 && $5 <= 0.75 {print $1, $2, $3, $5}' "${OUTDIR}/${PREFIX}_meth_reads.bed" | sort -k1,1 -k2,2n > "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph"
- ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bw"
+if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph" ]; then
+    echo "No undefined probability methylation calls found. Skipping bigWig generation for undefined probability calls."
+else
+    ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bw"
+fi
 
 # Remove intermediate files
 rm "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph"
