@@ -33,6 +33,11 @@ ORIGINAL_SEQ="${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
 
 read_id_list=$(egrep -i 'Complete 4qA|Partial distal 4qA' $TSV | cut -f1 | sort | uniq)
 
+if [[ -z "$read_id_list" ]]; then
+    echo "No reads with complete 4qA or partial distal 4qA copy found for ${PREFIX}. Exiting."
+    exit 0
+fi
+
 # Extract sequence of distal copy until pLAM to a fasta file
 EXTRACTED_SEQUENCE="${OUTDIR}/${PREFIX}_read_distal_seq.fasta"
 DISTAL_COORDS_BED="${OUTDIR}/${PREFIX}_distal_coords.bed"
@@ -112,6 +117,11 @@ for read_id in $read_id_list; do
 done
 
 echo "✅ Extracted sequences written to $EXTRACTED_SEQUENCE"
+
+if [[ ! -s "$EXTRACTED_SEQUENCE" ]]; then
+    echo "No sequences for potential long variants found in sample ${PREFIX}. Exiting."
+    exit 0
+fi
 
 # Clean up
 # rm ${OUTDIR}/${PREFIX}_tmp_*
