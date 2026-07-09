@@ -15,6 +15,7 @@
 - Updated `README.md` docs
 - Added `.gitignore`
 - Added `software_version.md` 
+- Moved `CHANGELOG.md` to `docs/`
 
 ## [0.1.1] - 2026-07-03
 ### Added
