@@ -5,7 +5,7 @@ set -e # <-- abort on any error
 # Default inputs
 INPUT_UBAM=""                            # Unaligned BAM
 INPUT_FASTQ=""
-REF=/g/data/kr68/genome/hs1.fa           # Reference genome
+REF=inputs/hs1.fa           # Reference genome
 REGION_BED=inputs/d4z4_region.chm13.bed
 FEATURES_FASTA=inputs/features.fasta
 SHORT_FEATURES=inputs/short_features.fasta
@@ -43,8 +43,8 @@ if [[ (-z "$INPUT_UBAM" || ! -f "$INPUT_UBAM") && (-z "$INPUT_FASTQ" || ! -f "$I
 fi
 
 # Paths to conversion tools
-PSLTOBED=/g/data/if89/apps/kentutils/0.0/bin/pslToBed
-BG2BW=/g/data/if89/apps/kentutils/0.0/bin/bedGraphToBigWig
+PSLTOBED=pslToBed
+BG2BW=bedGraphToBigWig
 
 # Parameters
 MAPQ=30
@@ -290,7 +290,7 @@ python3 helper/methylation_summary.py \
     --updated_bed "${OUTDIR}/${PREFIX}_updated_features.bed"
 
 mv "${OUTDIR}/${PREFIX}_methylation_summary.tsv" "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
-# mv "${OUTDIR}/${PREFIX}_updated_features.bed" "${OUTDIR}/${PREFIX}_all_features.bed"
+mv "${OUTDIR}/${PREFIX}_updated_features.bed" "${OUTDIR}/${PREFIX}_all_features.bed"
 
 if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.bed" ]; then
     echo "No methylation calls found. Exiting."

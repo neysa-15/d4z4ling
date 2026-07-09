@@ -1,0 +1,26 @@
+name: conda_env_d4z4ling
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - samtools=1.22      # not 1.19
+  - bedtools=2.31.1    # not 2.28
+  - minimap2=2.28
+  - seqtk
+  - blast
+  - seqkit>=2.9.0
+  - minimod=0.4.0
+  - meryl=1.4.1
+  - winnowmap=2.03
+  - ucsc-blat
+  - ucsc-psltobed
+  - ucsc-bedgraphtobigwig
+  - pip:
+    - biopython==1.81
+    - numpy
+    - pandas
+    - plotly
+    - pysam
+    - scipy

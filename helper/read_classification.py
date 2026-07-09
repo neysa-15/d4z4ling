@@ -17,8 +17,8 @@ def initialise_results(results, bed_df, features, lengths_dict):
             results[read_id]["pLAM_polyA_coords"] = None
             results[read_id]["pLAM_polyA_signal"] = None
             results[read_id]["ReadLength"] = lengths_dict.get(read_id, "NA")
-            results[read_id]["4qA_marker_percent_identity"] = "NA"
-            results[read_id]["4qB_marker_percent_identity"] = "NA"
+            results[read_id]["4qA_marker_percent_identity"] = None
+            results[read_id]["4qB_marker_percent_identity"] = None
             results[read_id]["duplex"] = False
             results[read_id]["optimal_duplex_strand"] = None
     return results
