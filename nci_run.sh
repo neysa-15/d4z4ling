@@ -4,7 +4,7 @@
 #PBS -l walltime=05:00:00
 #PBS -l ncpus=48
 #PBS -l mem=192GB
-#PBS -l storage=gdata/kr68+gdata/if89+scratch/kr68
+#PBS -l storage=gdata/kr68+gdata/if89+scratch/kr68+gdata/ox63+scratch/ox63
 #PBS -l jobfs=10GB
 #PBS -l wd
 
@@ -34,18 +34,18 @@ module load seqtk/1.3
 module load blast/2.11.0
 module load gcc/12.2.0
 module load seqkit/2.9.0
-module load minimod/0.2.0
+module load minimod/0.4.0
 module load meryl/1.4.1
 module load Winnowmap/2.03
 module load kentutils/0.0
 module load blat/37
 
-source fshd1_venv/bin/activate
+source d4z4ling_venv/bin/activate
 
 if [[ $UBAM == *.fasta ]] || [[ $UBAM == *.fa ]]; then
     echo "Processing fasta file: $SAMPLE $UBAM"
-    ./fshd1_annotate_fasta_script.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-fasta ${UBAM}
+    ./d4z4ling_no_methylation.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-fasta ${UBAM}
 else
     echo "Processing uBAM file: $SAMPLE $UBAM"
-    ./fshd1_script.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-ubam ${UBAM} --remove-intermediate-files true
+    ./d4z4ling.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-ubam ${UBAM} --remove-intermediate-files true --minimap-ref-index /g/data/kr68/neysa/fshd_pipeline/inputs/hs1.mmi
 fi

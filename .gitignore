@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*env*/
+
+# Data/outputs (usually too large for git)
+*.bam
+*.bai
+*.fastq
+*.fastq.gz
+*.fasta
+*.fa
+*.fa.gz
+*.fai
+*.mmi
+inputs/meryl*
+outputs/*
+
+# Logs
+logs*
+*.log
+*.pbs.o*
+*.pbs.e*
+
+# OS
+.DS_Store
