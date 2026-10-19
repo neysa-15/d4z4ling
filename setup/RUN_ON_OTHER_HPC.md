@@ -47,7 +47,7 @@ Optional field would be adding these flags (which have default input if not adde
 --region-bed {Path to d4z4 region bed file}
 --features-fasta {Path to features fasta file}
 --short-features-fasta {Path to features fasta file with sequence under 1000bp}
---PLAM {plam sequence fasta}
+--plam {plam sequence fasta}
 --haplotype-refs {Path to D4Z4 haplotype references}
 --remove-intermediate-files {true/false}
 --minimap-ref-index {Path to minimap index file of reference}
