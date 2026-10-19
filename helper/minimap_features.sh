@@ -16,20 +16,27 @@ READS=$3
 # module load kentutils/0.0
 # module load minimap2/2.22
 
-PSLTOBED=/g/data/if89/apps/kentutils/0.0/bin/pslToBed
+PSLTOBED=pslToBed #/g/data/if89/apps/kentutils/0.0/bin/pslToBed
 
 FEATURES_FASTA=$4
 SHORT_FASTA=$5
 PLAM_FASTA=$6
 
 TEMP_BAM=$OUTDIR/tmp_bams
+TMP_FA=$OUTDIR/tmp_read.fa
+
+# start clean: a killed run (qdel/walltime/OOM) skips cleanup and leaves these behind
+rm -rf "$TEMP_BAM" "$TMP_FA" "$OUTDIR"/tmp_read_*.fa
 mkdir -p "$TEMP_BAM"
 
-TMP_FA=$OUTDIR/tmp_read.fa
-awk -v out="$TMP_FA" '
+# clean up temp files on exit, including errors (won't fire on SIGKILL, hence the rm above)
+trap 'rm -rf "$TEMP_BAM" "$TMP_FA" "$OUTDIR"/tmp_read_*.fa' EXIT
+
+# linearise FASTA; redirect with > so the file is overwritten, not appended to
+awk '
     /^>/ {
-        if (seq) print seq >> out;
-        print >> out;
+        if (seq) print seq;
+        print;
         seq = "";
         next
     }
@@ -37,24 +44,24 @@ awk -v out="$TMP_FA" '
         seq = seq $0
     }
     END {
-        if (seq) print seq >> out
+        if (seq) print seq
     }
-' "$READS"
+' "$READS" > "$TMP_FA"
 
 while read -r header; do
     read_id=$(echo "$header" | cut -c2-)  # strip the leading ">"
-    
+
     # Extract the single read into a temporary FASTA
     TMP_READ_FA="${OUTDIR}/tmp_read_${read_id}.fa"
-    awk -v h="$header" 'BEGIN {p=0} $0==h {p=1; print; next} /^>/ {p=0} p {print}' "$TMP_FA" > ${TMP_READ_FA}
-    
+    awk -v h="$header" 'BEGIN {p=0} $0==h {p=1; print; next} /^>/ {p=0} p {print}' "$TMP_FA" > "${TMP_READ_FA}"
+
     # Run minimap2 using the read as the reference
-    minimap2 -x asm5 -t 1 -N 10 -a ${TMP_READ_FA} "$FEATURES_FASTA" | \
+    minimap2 -x asm5 -t 1 -N 10 -a "${TMP_READ_FA}" "$FEATURES_FASTA" | \
         samtools view -bS - | \
         samtools sort -o "${TEMP_BAM}/${read_id}.bam"
 
     # Run minimap2 short for p13-E11
-    minimap2 -x sr -t 1 -N 10 -a ${TMP_READ_FA} "$SHORT_FASTA" | \
+    minimap2 -x sr -t 1 -N 10 -a "${TMP_READ_FA}" "$SHORT_FASTA" | \
         samtools view -bS - | \
         samtools sort -o "${TEMP_BAM}/${read_id}_short.bam"
 
@@ -64,12 +71,12 @@ while read -r header; do
 
     rm "${TEMP_BAM}/${read_id}.bam"
     rm "${TEMP_BAM}/${read_id}_short.bam"
-    
-    rm ${TMP_READ_FA}
+
+    rm "${TMP_READ_FA}"
 done < <(grep '^>' "$READS")
 
 # Merge all into a single BAM
-samtools merge -f "${OUTDIR}/${PREFIX}_mapped_features.bam" ${TEMP_BAM}/*.bam
+samtools merge -f "${OUTDIR}/${PREFIX}_mapped_features.bam" "${TEMP_BAM}"/*.bam
 samtools index "${OUTDIR}/${PREFIX}_mapped_features.bam"
 
 bedtools bamtobed -i "${OUTDIR}/${PREFIX}_mapped_features.bam" > "${OUTDIR}/${PREFIX}_mapped_features.bed"
@@ -86,11 +93,11 @@ cat "${OUTDIR}/${PREFIX}_mapped_features.merged.psl" > "${OUTDIR}/${PREFIX}_mapp
 # USE BLAT FOR PLAM DUE TO SIZE LIMITATION
 blat -stepSize=5 -repMatch=2253 -minScore=20 -minIdentity=0 "$READS" "${PLAM_FASTA}" "${OUTDIR}/${PREFIX}_pLAM_matches.psl"
 
-awk 'BEGIN{FS=OFS="\t"} 
-     $1 ~ /^[0-9]+$/ { 
-        split($19,a,","); 
-        completeness = $1 / $11 * 100; 
-        if (completeness >= 50) print 
+awk 'BEGIN{FS=OFS="\t"}
+     $1 ~ /^[0-9]+$/ {
+        split($19,a,",");
+        completeness = $1 / $11 * 100;
+        if (completeness >= 50) print
      }' "${OUTDIR}/${PREFIX}_pLAM_matches.psl" \
 > "${OUTDIR}/${PREFIX}_pLAM_matches_filtered.psl"
 
@@ -103,9 +110,7 @@ ${PSLTOBED} "${OUTDIR}/${PREFIX}_pLAM_matches_filtered.psl" "${OUTDIR}/${PREFIX}
 # merge with the rest of the features
 cat "${OUTDIR}/${PREFIX}_pLAM_matches.bed" >> "${OUTDIR}/${PREFIX}_mapped_features.bed"
 
-# Optional: clean up
-rm $TMP_FA
-rm -r $TEMP_BAM
-rm ${OUTDIR}/${PREFIX}_pLAM_matches*
+# Clean up (tmp_read.fa and tmp_bams/ are handled by the trap)
+rm "${OUTDIR}/${PREFIX}_pLAM_matches"*
 rm "${OUTDIR}/${PREFIX}_mapped_features.merged.psl"
 rm "${OUTDIR}/${PREFIX}_mapped_features.merged.sam"
