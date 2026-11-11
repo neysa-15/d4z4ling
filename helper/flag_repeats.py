@@ -75,7 +75,7 @@ def check_re_vs_haplotype(row,  re_threshold=0.7, ratio_threshold=50):
 
     if type(haplotype) == float and pd.isna(haplotype):
         return "NA"  # Skip if haplotype is NaN
-    
+
     flag = []
 
     if "4" in haplotype and blni_ratio > ratio_threshold:
@@ -84,7 +84,7 @@ def check_re_vs_haplotype(row,  re_threshold=0.7, ratio_threshold=50):
     elif "10" in haplotype and xapi_ratio > ratio_threshold:
         print(f"{row['ReadID']} classified as haplotype 10q but xapi is higher than blni, have {copy_number} repeats")
         flag.append("wrong_re")
-    
+
     if copy_number > 4:
         dynamic_threshold = int(re_threshold * copy_number)
         if ("4" in haplotype) and (num_xapi < dynamic_threshold):
@@ -122,7 +122,7 @@ def get_distal_d4z4_coords(df):
 
     strand = df["strand"].iloc[0]
 
-    if strand == "+":  
+    if strand == "+":
         # Get the row with max d4z4_num
         distal_d4z4 = df.loc[df["d4z4_num"].idxmax()]
 
@@ -133,7 +133,7 @@ def get_distal_d4z4_coords(df):
             # If the first block size is 0, use the second largest
             distal_copy = distal_d4z4["d4z4_num"] - 1
             distal_d4z4 = df[df["d4z4_num"] == distal_copy].iloc[0] if (df["d4z4_num"] == distal_copy).any() else df.loc[df["d4z4_num"].idxmax()]
-    else:  
+    else:
         # Get d4z4_1, or fallback to min if missing
         distal_d4z4 = df[df["d4z4_num"] == 1].iloc[0] if (df["d4z4_num"] == 1).any() else df.loc[df["d4z4_num"].idxmin()]
 
@@ -156,7 +156,7 @@ def flag_read_label(main_tsv, repeats_bed, fasta_file):
     """
 
     inconsistent_flag_dict = {}
-    
+
     # put main tsv to df and filter only lines with "Unclassified" in read label
     main_tsv_df = pd.read_csv(main_tsv, sep="\t")
     main_tsv_df_unclassified = main_tsv_df[main_tsv_df["ReadLabel"].str.contains("Unclassified")]
@@ -259,7 +259,7 @@ if __name__ == "__main__":
     parser.add_argument("--fasta", required=True, help="Input FASTA file with full reads.")
 
     args = parser.parse_args()
-    
+
     bed_data = load_bed(args.repeats_bed)
     bed_results = analyse_bed(bed_data)
 

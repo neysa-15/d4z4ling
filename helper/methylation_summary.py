@@ -16,7 +16,7 @@ def get_distal_d4z4_coords(df):
 
     strand = df["Strand"].iloc[0]  # Assuming all rows have the same strand
 
-    if strand == "+":  
+    if strand == "+":
         # Get the row with max d4z4_num
         distal_d4z4 = df.loc[df["d4z4_num"].idxmax()]
 
@@ -26,7 +26,7 @@ def get_distal_d4z4_coords(df):
             # If the first block size is 0, use the second largest
             distal_copy = distal_d4z4["d4z4_num"] - 1
             distal_d4z4 = df[df["d4z4_num"] == distal_copy].iloc[0] if (df["d4z4_num"] == distal_copy).any() else df.loc[df["d4z4_num"].idxmax()]
-    else:  
+    else:
         # Get d4z4_1, or fallback to min if missing
         distal_d4z4 = df[df["d4z4_num"] == 1].iloc[0] if (df["d4z4_num"] == 1).any() else df.loc[df["d4z4_num"].idxmin()]
 
@@ -181,12 +181,12 @@ def methylation_summary(summary_file, features_file, methylation_file, output_fi
 
     # Save the updated features DataFrame to a new BED file
     features_df.to_csv(updated_bed_file, sep="\t", index=False, header=False)
-    
+
     return summary_df
 
 def fshd1_individual_read_status(df, output_file):
     df.astype({'MappedEstimatedCopies': 'int', 'pLAM_Methylation_Percentage': 'float'}).dtypes
-    
+
     # ----------- FSHD1_diagnostic_positive -----------
     df.loc[
         (df['ReadLabel'] == 'Complete 4qA')
@@ -241,7 +241,7 @@ def fshd1_individual_read_status(df, output_file):
 
     # If didn't get any status from above then FSHD1_status = FSHD1_non_diagnostic
     df['FSHD1_status'] = df['FSHD1_status'].fillna('Non-diagnostic')
-    
+
     return df
 
 # def fshd2_individual_read_status(df, output_file):
