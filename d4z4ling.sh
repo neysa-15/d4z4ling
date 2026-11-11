@@ -2,20 +2,22 @@
 
 set -e # <-- abort on any error
 
+REALPATH=$(dirname "$(readlink -f "$0")")
+
 # Default inputs
 INPUT_UBAM=""                            # Unaligned BAM
 INPUT_FASTQ=""
-REF=inputs/hs1.fa           # Reference genome
-REGION_BED=inputs/d4z4_region.chm13.bed
-FEATURES_FASTA=inputs/features.fasta
-SHORT_FEATURES=inputs/short_features.fasta
-PLAM=inputs/pLAM.fasta
+REF=${REALPATH}/inputs/hs1.fa           # Reference genome
+REGION_BED=${REALPATH}/inputs/d4z4_region.chm13.bed
+FEATURES_FASTA=${REALPATH}/inputs/features.fasta
+SHORT_FEATURES=${REALPATH}/inputs/short_features.fasta
+PLAM=${REALPATH}/inputs/pLAM.fasta
 PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
-HAPLOTYPE_REFS=inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
-MMI="inputs/hs1.mmi"
+HAPLOTYPE_REFS=${REALPATH}/inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
+MMI=${REALPATH}/inputs/hs1.mmi
 REMOVE_INTERMEDIATE_FILES=false
-FSHD1_STATUS="inputs/fshd1_status_template.tsv"
+FSHD1_STATUS=${REALPATH}/inputs/fshd1_status_template.tsv
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -77,8 +79,8 @@ fi
 echo "MERYL"
 # Define meryl outputs relative to the reference genome directory
 REF_NAME=$(basename $REF .fa)
-MERYL_DB="inputs/merylDB_${REF_NAME}"
-REPETITIVE_REGIONS="inputs/${REF_NAME}_repetitive_k15.txt"
+MERYL_DB="${REALPATH}/inputs/merylDB_${REF_NAME}"
+REPETITIVE_REGIONS="${REALPATH}/inputs/${REF_NAME}_repetitive_k15.txt"
 
 # Step 1: Pre-compute k-mer frequency (only if meryl output does not exist)
 if [ ! -d "$MERYL_DB" ]; then
@@ -125,6 +127,7 @@ if [[ $(samtools view -c "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam") -eq 0
     exit 0
 fi
 
+echo "Remapping with winnowmap to CHM13"
 # Remap with winnowmap to CHM13
 samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
     samtools fastq -TMM,ML - | \
@@ -148,7 +151,7 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${
 #######################################
 
 # map features
-./helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "$SHORT_FEATURES" "$PLAM"
+${REALPATH}/helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "$SHORT_FEATURES" "$PLAM"
 
 # Map SSLP
 seqkit amplicon --bed -F GGTGGAGTTCTGGTTTCAGC -R CCTGTGCTTCAGAGGCATTTG -m 2 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" > "${OUTDIR}/${PREFIX}_SSLP.bed"
@@ -199,7 +202,7 @@ rm "${aligned_bams[@]}" "${aligned_bams[@]/%.bam/.bam.bai}"
 
 # Step 8: Parse PSL to generate a summary table
 echo "Parsing PSL to generate summary table" 
-python3 helper/read_classification.py \
+python3 ${REALPATH}/helper/read_classification.py \
     --psl "${OUTDIR}/${PREFIX}_mapped_features.psl" \
     --bed "${OUTDIR}/${PREFIX}_reads_of_interest.bed" \
     --output "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
@@ -209,7 +212,7 @@ python3 helper/read_classification.py \
 
 ## Step 12: Generate ordered alignment sequences
 echo "Generating ordered alignment sequences"
-alignment_script="helper/alignment_order_clipping.py"
+alignment_script="${REALPATH}/helper/alignment_order_clipping.py"
 
 # Run the alignment order script
 python3 "$alignment_script" \
@@ -242,14 +245,14 @@ samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | awk '{
 }' > "${OUTDIR}/${PREFIX}_potential_hybrid.tsv"
 
 # Flag for gaps and overlaps
-python3 helper/flag_repeats.py \
+python3 ${REALPATH}/helper/flag_repeats.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
     --hybrid "${OUTDIR}/${PREFIX}_potential_hybrid.tsv" \
     --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
 
 # Unify features and repeats into a single bed and add colour
-python3 helper/add_colors_to_bed.py \
+python3 ${REALPATH}/helper/add_colors_to_bed.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --features_bed "${OUTDIR}/${PREFIX}_mapped_features.bed" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
@@ -257,7 +260,7 @@ python3 helper/add_colors_to_bed.py \
     --output_bed "${OUTDIR}/${PREFIX}_all_features.bed"
 
 # reannotate distal haplotype when identified as the 4qA long haplotype (DUX4L)
-./helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
+${REALPATH}/helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
 
 # Check for overlapping repeats after distal haplotype re-annotation
 ANNOTATED_BED="${OUTDIR}/${PREFIX}_all_features.bed"
@@ -280,7 +283,7 @@ samtools index "${OUTDIR}/${PREFIX}_meth_reads.bam"
 minimod view -c m "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_meth_reads.bam" | awk 'NR > 1 {print $4"\t"$5"\t"$5+1"\t.\t"$7}' > "${OUTDIR}/${PREFIX}_meth_reads.bed"
 
 fshd1_read_status_tsv="${OUTDIR}/${PREFIX}_fshd1_status_counts.tsv"
-python3 helper/methylation_summary.py \
+python3 ${REALPATH}/helper/methylation_summary.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --features_bed "${OUTDIR}/${PREFIX}_all_features.bed" \
     --meth "${OUTDIR}/${PREFIX}_meth_reads.bed" \
@@ -356,7 +359,7 @@ fi
 rm "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph"
 
 # Create plotly reports
-python3 helper/report_plotly.py \
+python3 ${REALPATH}/helper/report_plotly.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
 
 # Remove intermediate files
