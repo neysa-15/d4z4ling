@@ -48,6 +48,9 @@ fi
 PSLTOBED=pslToBed
 BG2BW=bedGraphToBigWig
 
+SAMTOOLS=samtools
+MINIMAP2=minimap2
+
 # Parameters
 MAPQ=30
 MIN_READ_LENGTH=30000
@@ -66,13 +69,13 @@ if [[  ( ! -z "$INPUT_UBAM" ) && ( -f "$INPUT_UBAM") ]]; then
     ubam_exist=true
     # INPUT_FASTQ=basename "$INPUT_UBAM" .bam
     UBAM_BASE=$(basename $INPUT_UBAM)
-    samtools fastq -TMM,ML "$INPUT_UBAM" > "${OUTDIR}/${UBAM_BASE%.bam}.fastq"
+    $SAMTOOLS fastq -TMM,ML "$INPUT_UBAM" > "${OUTDIR}/${UBAM_BASE%.bam}.fastq"
     # samtools fastq -TMM,ML "$INPUT_UBAM" > "${INPUT_UBAM%.bam}.fastq"
     INPUT_FASTQ="${OUTDIR}/${UBAM_BASE%.bam}.fastq"
 elif [[  ( ! -z "$INPUT_FASTQ" ) && ( -f "$INPUT_FASTQ") ]]; then
     fastq_exist=true
     FASTQ_BASE=$(basename $INPUT_FASTQ)
-    samtools import -u -s "$INPUT_FASTQ" -o "${OUTDIR}/${FASTQ_BASE%.fastq}.bam"
+    $SAMTOOLS import -u -s "$INPUT_FASTQ" -o "${OUTDIR}/${FASTQ_BASE%.fastq}.bam"
     INPUT_UBAM="${OUTDIR}/${FASTQ_BASE%.fastq}.bam"
 fi
 
@@ -99,22 +102,22 @@ else
 fi
 
 # Run winnowmap alignment
-# echo "WINNOWMAP" 
+# echo "WINNOWMAP"
 # winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
-#         samtools view -L "$REGION_BED" -Sb | \
-#         samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
+#         $SAMTOOLS view -L "$REGION_BED" -Sb | \
+#         $SAMTOOLS sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
 echo "minimap winnowmap"
 # MMI="${OUTDIR}/${REF_NAME}.mmi"
-# minimap2 -x $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
+# $MINIMAP2 -x $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
 #  -r 500,100k --rmq=yes -f 0.001
-minimap2 -x $MODE -a "$MMI" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
-        samtools view -L "$REGION_BED" -Sb | \
-        samtools sort -o "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
+$MINIMAP2 -x $MODE -a "$MMI" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
+        $SAMTOOLS view -L "$REGION_BED" -Sb | \
+        $SAMTOOLS sort -o "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
 
-samtools index "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
+$SAMTOOLS index "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
 
-if [[ $(samtools view -c "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam") -eq 0 ]]; then
+if [[ $($SAMTOOLS view -c "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam") -eq 0 ]]; then
     echo "No reads mapped to the region of interest. Exiting."
 
     # Remove temp created fastq/ubam
@@ -123,24 +126,24 @@ if [[ $(samtools view -c "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam") -eq 0
     elif [[ $fastq_exist ]]; then
         rm "${INPUT_UBAM}"
     fi
-    
+
     exit 0
 fi
 
 echo "Remapping with winnowmap to CHM13"
 # Remap with winnowmap to CHM13
-samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
-    samtools fastq -TMM,ML - | \
+$SAMTOOLS view -N <($SAMTOOLS view "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
+    $SAMTOOLS fastq -TMM,ML - | \
     winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" - -t ${PBS_NCPUS:-8} | \
-    samtools view -L "$REGION_BED" -Sb | \
-    samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
+    $SAMTOOLS view -L "$REGION_BED" -Sb | \
+    $SAMTOOLS sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
-samtools index "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
+$SAMTOOLS index "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
 # Generate FASTA from uBAM
 echo "Generating FASTA from uBAM"
-samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b "$INPUT_UBAM" | \
-	samtools fasta > "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
+$SAMTOOLS view -N <($SAMTOOLS view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b "$INPUT_UBAM" | \
+	$SAMTOOLS fasta > "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
 
 # Convert BAM to BED
 echo "Converting BAM to BED"
@@ -178,8 +181,8 @@ for chrom in chr4 chr10; do
 
     # Align reads to the haplotype-specific reference
     aligned_bam="${OUTDIR}/${PREFIX}_${haplotype}_aligned.bam"
-    minimap2 --secondary=no --MD -ax map-ont "$haplotype_ref" "$haplotype_reads" | samtools sort -o "$aligned_bam"
-    samtools index "$aligned_bam"
+    $MINIMAP2 --secondary=no --MD -ax map-ont "$haplotype_ref" "$haplotype_reads" | $SAMTOOLS sort -o "$aligned_bam"
+    $SAMTOOLS index "$aligned_bam"
 
     # Add the BAM file to the array
     aligned_bams+=("$aligned_bam")
@@ -193,15 +196,15 @@ echo "Haplotype-specific alignment complete."
 echo "Merging haplotype-aligned BAM files"
 merged_bam="${OUTDIR}/${PREFIX}_aligned_haplotypes.bam"
 
-# Use samtools to merge all BAM files from the array
-samtools merge -f "$merged_bam" "${aligned_bams[@]}"
-samtools index "$merged_bam"
+# Use $SAMTOOLS to merge all BAM files from the array
+$SAMTOOLS merge -f "$merged_bam" "${aligned_bams[@]}"
+$SAMTOOLS index "$merged_bam"
 
 # Remove individual haplotype BAM files and their indexes
 rm "${aligned_bams[@]}" "${aligned_bams[@]/%.bam/.bam.bai}"
 
 # Step 8: Parse PSL to generate a summary table
-echo "Parsing PSL to generate summary table" 
+echo "Parsing PSL to generate summary table"
 python3 ${REALPATH}/helper/read_classification.py \
     --psl "${OUTDIR}/${PREFIX}_mapped_features.psl" \
     --bed "${OUTDIR}/${PREFIX}_reads_of_interest.bed" \
@@ -225,7 +228,7 @@ python3 "$alignment_script" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
 
 # Get potential hybrid reads by looking for supplementary alignments
-samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | awk '{
+$SAMTOOLS view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | awk '{
     primary_chr = $3
     for (i=12; i<=NF; i++) {
         if ($i ~ /^SA:Z:/) {
@@ -271,13 +274,13 @@ alignment_order_clipping.filter_d4z4_bed(
 )
 " 2>&1
 
-samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
-    samtools fastq -TMM,ML - | minimap2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
-    samtools view -F 2308 -b - | \
-    samtools sort -@ ${THREADS} - > "${OUTDIR}/${PREFIX}_meth_reads.bam"    
+$SAMTOOLS view -N <($SAMTOOLS view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
+    $SAMTOOLS fastq -TMM,ML - | $MINIMAP2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
+    $SAMTOOLS view -F 2308 -b - | \
+    $SAMTOOLS sort -@ ${THREADS} - > "${OUTDIR}/${PREFIX}_meth_reads.bam"
 
 # Index the resulting BAM file
-samtools index "${OUTDIR}/${PREFIX}_meth_reads.bam"
+$SAMTOOLS index "${OUTDIR}/${PREFIX}_meth_reads.bam"
 
 # use minimod to get meth probabilities for each CpG within a given read
 minimod view -c m "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_meth_reads.bam" | awk 'NR > 1 {print $4"\t"$5"\t"$5+1"\t.\t"$7}' > "${OUTDIR}/${PREFIX}_meth_reads.bed"
@@ -319,10 +322,10 @@ fi
 # Check if genome.chrom.sizes exists
 if [ ! -f "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" ]; then
     echo "Creating ${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes in $OUTDIR..."
-    
+
     # Generate .fai index for the reference if it doesn't exist
     if [ ! -f "${OUTDIR}/${PREFIX}_reads_of_interest.fasta.fai" ]; then
-        samtools faidx "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
+        $SAMTOOLS faidx "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
     fi
 
     # Create genome.chrom.sizes from the .fai index

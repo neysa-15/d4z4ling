@@ -229,12 +229,12 @@ if (( $(echo "$percentage_longvar > 70" | bc -l) )); then
     fgrep -f  "$match_read_tmp" "$DISTAL_COORDS_BED" > "$tmp_update_bed"
 
     # Step 3: Apply updates to all_features.bed
-    awk 'BEGIN{FS=OFS="\t"} 
+    awk 'BEGIN{FS=OFS="\t"}
     NR==FNR {
         key=$1"\t"$4
         updates[key]=$2 OFS $3 OFS $7
         next
-    } 
+    }
     {
         key=$1"\t"$4
         if (key in updates) {
@@ -253,4 +253,3 @@ if (( $(echo "$percentage_longvar > 70" | bc -l) )); then
     # Clean up
     rm $match_read_tmp $tmp_update_bed
 fi
- 
