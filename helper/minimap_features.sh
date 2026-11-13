@@ -6,18 +6,6 @@ OUTDIR=$1
 PREFIX=$2
 READS=$3
 
-# module unload samtools
-# module unload bedtools
-# module unload blat
-# module unload kentutils
-# module unload minimap2
-
-# module load samtools/1.19
-# module load bedtools/2.28.0
-# module load blat/37
-# module load kentutils/0.0
-# module load minimap2/2.22
-
 PSLTOBED=pslToBed #/g/data/if89/apps/kentutils/0.0/bin/pslToBed
 
 FEATURES_FASTA=$4

@@ -12,16 +12,6 @@
 
 REALPATH=$(dirname "$(readlink -f "$0")")
 
-module unload python3
-module unload blast
-module unload seqkit
-module unload bedtools
-
-module load python3/3.12.1
-module load blast/2.14.1
-module load seqkit/2.9.0
-module load bedtools/2.31.0
-
 OUTDIR=$1
 PREFIX=$2
 
