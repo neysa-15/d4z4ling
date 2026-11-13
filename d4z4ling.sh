@@ -18,6 +18,7 @@ HAPLOTYPE_REFS=${REALPATH}/inputs/d4z4_repeats.fasta  # Fasta file containing ha
 MMI=${REALPATH}/inputs/hs1.mmi
 REMOVE_INTERMEDIATE_FILES=false
 FSHD1_STATUS=${REALPATH}/inputs/fshd1_status_template.tsv
+THREADS=8
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -32,6 +33,7 @@ while [[ $# -gt 0 ]]; do
         --short-features-fasta) SHORT_FEATURES="$2"; shift 2;;
         --plam) PLAM="$2"; shift 2;;
         --haplotype-refs) HAPLOTYPE_REFS="$2"; shift 2;;
+        --threads) THREADS="$2"; shift 2;;
         --remove-intermediate-files) REMOVE_INTERMEDIATE_FILES="$2"; shift 2;;
         --minimap-ref-index) MMI="$2"; shift 2;;
         *) echo "Unknown option: $1"; exit 1;;
@@ -45,11 +47,12 @@ if [[ (-z "$INPUT_UBAM" || ! -f "$INPUT_UBAM") && (-z "$INPUT_FASTQ" || ! -f "$I
 fi
 
 # Paths to conversion tools
-PSLTOBED=pslToBed
-BG2BW=bedGraphToBigWig
+[ -z ${PSLTOBED} ] && PSLTOBED=pslToBed
+[ -z ${BG2BW} ] && BG2BW=bedGraphToBigWig
 
-SAMTOOLS=samtools
-MINIMAP2=minimap2
+[ -z ${SAMTOOLS} ] && SAMTOOLS=samtools
+[ -z ${MINIMAP2} ] && MINIMAP2=minimap2
+[ -z ${FSHD_PYTHON} ] && FSHD_PYTHON=python3
 
 # Parameters
 MAPQ=30
@@ -205,7 +208,7 @@ rm "${aligned_bams[@]}" "${aligned_bams[@]/%.bam/.bam.bai}"
 
 # Step 8: Parse PSL to generate a summary table
 echo "Parsing PSL to generate summary table"
-python3 ${REALPATH}/helper/read_classification.py \
+${FSHD_PYTHON} ${REALPATH}/helper/read_classification.py \
     --psl "${OUTDIR}/${PREFIX}_mapped_features.psl" \
     --bed "${OUTDIR}/${PREFIX}_reads_of_interest.bed" \
     --output "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
@@ -218,7 +221,7 @@ echo "Generating ordered alignment sequences"
 alignment_script="${REALPATH}/helper/alignment_order_clipping.py"
 
 # Run the alignment order script
-python3 "$alignment_script" \
+${FSHD_PYTHON} "$alignment_script" \
     --bam "${OUTDIR}/${PREFIX}_aligned_haplotypes.bam" \
     --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" \
     --output_table "${OUTDIR}/${PREFIX}_d4z4_units.tsv" \
@@ -248,14 +251,14 @@ $SAMTOOLS view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | awk '{
 }' > "${OUTDIR}/${PREFIX}_potential_hybrid.tsv"
 
 # Flag for gaps and overlaps
-python3 ${REALPATH}/helper/flag_repeats.py \
+${FSHD_PYTHON} ${REALPATH}/helper/flag_repeats.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
     --hybrid "${OUTDIR}/${PREFIX}_potential_hybrid.tsv" \
     --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
 
 # Unify features and repeats into a single bed and add colour
-python3 ${REALPATH}/helper/add_colors_to_bed.py \
+${FSHD_PYTHON} ${REALPATH}/helper/add_colors_to_bed.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --features_bed "${OUTDIR}/${PREFIX}_mapped_features.bed" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
@@ -286,7 +289,7 @@ $SAMTOOLS index "${OUTDIR}/${PREFIX}_meth_reads.bam"
 minimod view -c m "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_meth_reads.bam" | awk 'NR > 1 {print $4"\t"$5"\t"$5+1"\t.\t"$7}' > "${OUTDIR}/${PREFIX}_meth_reads.bed"
 
 fshd1_read_status_tsv="${OUTDIR}/${PREFIX}_fshd1_status_counts.tsv"
-python3 ${REALPATH}/helper/methylation_summary.py \
+${FSHD_PYTHON} ${REALPATH}/helper/methylation_summary.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --features_bed "${OUTDIR}/${PREFIX}_all_features.bed" \
     --meth "${OUTDIR}/${PREFIX}_meth_reads.bed" \
@@ -362,7 +365,7 @@ fi
 rm "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph"
 
 # Create plotly reports
-python3 ${REALPATH}/helper/report_plotly.py \
+${FSHD_PYTHON} ${REALPATH}/helper/report_plotly.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
 
 # Remove intermediate files
