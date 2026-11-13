@@ -7,7 +7,7 @@ REALPATH=$(dirname "$(readlink -f "$0")")
 # Default inputs
 INPUT_UBAM=""                            # Unaligned BAM
 INPUT_FASTQ=""
-REF=${REALPATH}/inputs/hs1.fa           # Reference genome
+REF=${REALPATH}/genome/hs1.fa           # Reference genome
 REGION_BED=${REALPATH}/inputs/d4z4_region.chm13.bed
 FEATURES_FASTA=${REALPATH}/inputs/features.fasta
 SHORT_FEATURES=${REALPATH}/inputs/short_features.fasta
@@ -15,7 +15,7 @@ PLAM=${REALPATH}/inputs/pLAM.fasta
 PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
 HAPLOTYPE_REFS=${REALPATH}/inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
-MMI=${REALPATH}/inputs/hs1.mmi
+MMI=${REALPATH}/genome/hs1.mmi
 REMOVE_INTERMEDIATE_FILES=false
 FSHD1_STATUS=${REALPATH}/inputs/fshd1_status_template.tsv
 THREADS=8
