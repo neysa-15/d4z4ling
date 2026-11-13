@@ -132,7 +132,7 @@ fi
 export BLASTDB_LMDB_MAP_SIZE=200000000
 
 # BLAST distal copy to DUX4 sequence
-DUX4_SEQUENCES=${REALPATH}/inputs/dux4_genbank.fasta
+DUX4_SEQUENCES=${REALPATH}/../inputs/dux4_genbank.fasta
 DUX4_DB=${OUTDIR}/${PREFIX}_db
 BLAST_RESULTS=${OUTDIR}/${PREFIX}_dux4.blast.tsv
 makeblastdb -in "${DUX4_SEQUENCES}" -dbtype nucl -out ${DUX4_DB}
