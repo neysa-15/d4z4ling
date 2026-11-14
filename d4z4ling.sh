@@ -124,9 +124,9 @@ if [[ $($SAMTOOLS view -c "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam") -eq 
     echo "No reads mapped to the region of interest. Exiting."
 
     # Remove temp created fastq/ubam
-    if [[ $ubam_exist ]]; then
+    if [[ "$ubam_exist" == true ]]; then
         rm "${INPUT_FASTQ}"
-    elif [[ $fastq_exist ]]; then
+    elif [[ "$fastq_exist" == true ]]; then
         rm "${INPUT_UBAM}"
     fi
 
@@ -199,7 +199,7 @@ echo "Haplotype-specific alignment complete."
 echo "Merging haplotype-aligned BAM files"
 merged_bam="${OUTDIR}/${PREFIX}_aligned_haplotypes.bam"
 
-# Use $SAMTOOLS to merge all BAM files from the array
+# Use samtools to merge all BAM files from the array
 $SAMTOOLS merge -f "$merged_bam" "${aligned_bams[@]}"
 $SAMTOOLS index "$merged_bam"
 
@@ -270,7 +270,7 @@ ${REALPATH}/helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
 
 # Check for overlapping repeats after distal haplotype re-annotation
 ANNOTATED_BED="${OUTDIR}/${PREFIX}_all_features.bed"
-python3 -c "
+PYTHONPATH="${REALPATH}" ${FSHD_PYTHON} -c "
 from helper import alignment_order_clipping
 alignment_order_clipping.filter_d4z4_bed(
     '${ANNOTATED_BED}'
@@ -305,7 +305,7 @@ if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.bed" ]; then
     echo "No methylation calls found. Exiting."
 
     # Remove intermediate files
-    if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
+    if [[ "$REMOVE_INTERMEDIATE_FILES" == true ]]; then
         rm ${OUTDIR}/${PREFIX}_*blast*
         rm ${OUTDIR}/${PREFIX}_*top*
         rm ${OUTDIR}/${PREFIX}_*psl
@@ -313,9 +313,9 @@ if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.bed" ]; then
     fi
 
     # Remove temp created fastq/ubam
-    if [[ $ubam_exist ]]; then
+    if [[ "$ubam_exist" == true ]]; then
         rm "${INPUT_FASTQ}"
-    elif [[ $fastq_exist ]]; then
+    elif [[ "$fastq_exist" == true ]]; then
         rm "${INPUT_UBAM}"
     fi
 
@@ -369,7 +369,7 @@ ${FSHD_PYTHON} ${REALPATH}/helper/report_plotly.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
 
 # Remove intermediate files
-if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
+if [[ "$REMOVE_INTERMEDIATE_FILES" == true ]]; then
     rm ${OUTDIR}/${PREFIX}_*blast*
     rm ${OUTDIR}/${PREFIX}_*top*
     rm ${OUTDIR}/${PREFIX}_*psl
@@ -377,8 +377,8 @@ if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
 fi
 
 # Remove temp created fastq/ubam
-if [[ $ubam_exist ]]; then
+if [[ "$ubam_exist" == true ]]; then
     rm "${INPUT_FASTQ}"
-elif [[ $fastq_exist ]]; then
+elif [[ "$fastq_exist" == true ]]; then
     rm "${INPUT_UBAM}"
 fi
