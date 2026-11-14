@@ -199,7 +199,7 @@ echo "Haplotype-specific alignment complete."
 echo "Merging haplotype-aligned BAM files"
 merged_bam="${OUTDIR}/${PREFIX}_aligned_haplotypes.bam"
 
-# Use $SAMTOOLS to merge all BAM files from the array
+# Use samtools to merge all BAM files from the array
 $SAMTOOLS merge -f "$merged_bam" "${aligned_bams[@]}"
 $SAMTOOLS index "$merged_bam"
 
@@ -270,7 +270,7 @@ ${REALPATH}/helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
 
 # Check for overlapping repeats after distal haplotype re-annotation
 ANNOTATED_BED="${OUTDIR}/${PREFIX}_all_features.bed"
-python3 -c "
+PYTHONPATH="${REALPATH}" ${FSHD_PYTHON} -c "
 from helper import alignment_order_clipping
 alignment_order_clipping.filter_d4z4_bed(
     '${ANNOTATED_BED}'

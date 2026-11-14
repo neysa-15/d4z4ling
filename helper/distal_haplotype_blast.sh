@@ -1,12 +1,4 @@
 #!/bin/bash -l
-#PBS -P kr68
-#PBS -q normal
-#PBS -l walltime=04:00:00
-#PBS -l ncpus=48
-#PBS -l mem=192GB
-#PBS -l storage=gdata/kr68+gdata/if89+scratch/kr68
-#PBS -l jobfs=10GB
-#PBS -l wd
 
 # set -e
 
