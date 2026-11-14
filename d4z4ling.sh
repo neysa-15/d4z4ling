@@ -124,9 +124,9 @@ if [[ $($SAMTOOLS view -c "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam") -eq 
     echo "No reads mapped to the region of interest. Exiting."
 
     # Remove temp created fastq/ubam
-    if [[ $ubam_exist ]]; then
+    if [[ "$ubam_exist" == true ]]; then
         rm "${INPUT_FASTQ}"
-    elif [[ $fastq_exist ]]; then
+    elif [[ "$fastq_exist" == true ]]; then
         rm "${INPUT_UBAM}"
     fi
 
@@ -305,7 +305,7 @@ if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.bed" ]; then
     echo "No methylation calls found. Exiting."
 
     # Remove intermediate files
-    if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
+    if [[ "$REMOVE_INTERMEDIATE_FILES" == true ]]; then
         rm ${OUTDIR}/${PREFIX}_*blast*
         rm ${OUTDIR}/${PREFIX}_*top*
         rm ${OUTDIR}/${PREFIX}_*psl
@@ -313,9 +313,9 @@ if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.bed" ]; then
     fi
 
     # Remove temp created fastq/ubam
-    if [[ $ubam_exist ]]; then
+    if [[ "$ubam_exist" == true ]]; then
         rm "${INPUT_FASTQ}"
-    elif [[ $fastq_exist ]]; then
+    elif [[ "$fastq_exist" == true ]]; then
         rm "${INPUT_UBAM}"
     fi
 
@@ -369,7 +369,7 @@ ${FSHD_PYTHON} ${REALPATH}/helper/report_plotly.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
 
 # Remove intermediate files
-if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
+if [[ "$REMOVE_INTERMEDIATE_FILES" == true ]]; then
     rm ${OUTDIR}/${PREFIX}_*blast*
     rm ${OUTDIR}/${PREFIX}_*top*
     rm ${OUTDIR}/${PREFIX}_*psl
@@ -377,8 +377,8 @@ if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
 fi
 
 # Remove temp created fastq/ubam
-if [[ $ubam_exist ]]; then
+if [[ "$ubam_exist" == true ]]; then
     rm "${INPUT_FASTQ}"
-elif [[ $fastq_exist ]]; then
+elif [[ "$fastq_exist" == true ]]; then
     rm "${INPUT_UBAM}"
 fi
