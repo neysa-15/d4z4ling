@@ -3,6 +3,7 @@
   - [What is NCI?](#what-is-nci)
   - [NCI Pre-requisite](#nci-pre-requisite)
   - [Reference Genome](#reference-genome)
+    - [Generate meryl database for repetitive region mapping](#generate-meryl-database-for-repetitive-region-mapping)
   - [OPTION1: WITHOUT CONDA, with python venv](#option1-without-conda-with-python-venv)
     - [How to run](#how-to-run)
   - [OPTION2: WITH CONDA](#option2-with-conda)
@@ -22,17 +23,20 @@ module use -a /g/data/if89/apps/modulefiles
 ```
 
 ## Reference Genome
-Get a copy of the hs1 (T2T-CHM13) reference genome
+Load module
 ```
-rsync -a -P rsync://hgdownload.soe.ucsc.edu/goldenPath/hs1/bigZips/hs1.fa.gz inputs/.
-gunzip inputs/hs1.fa.gz
-samtools faidx inputs/hs1.fa
+module load samtools
+module load minimap2
 ```
 
-Run minimap2 reference indexing for script input (For efficiency purposes when running for multiple samples to the same reference)
+Get a copy of the hs1 (T2T-CHM13) reference genome and create indexes.
 ```
-module load minimap2
-minimap2 -d inputs/hs1.mmi {Path to chm13 fasta}
+bash ./genome/download_ref_chm13.sh
+```
+
+### Generate meryl database for repetitive region mapping
+```
+bash ./genome/meryl.sh
 ```
 
 ## OPTION1: WITHOUT CONDA, with python venv
@@ -87,7 +91,10 @@ Job script:
 qsub nci_run.sh
 ```
 
-
+Job script with variable through job submission:
+```
+qsub nci_run.sh -v SAMPLE=${sample},OUTDIR=${outdir},UBAM=${ubam},REALPATH=/path/to/d4z4ling
+```
 
 ## OPTION2: WITH CONDA
 ### Setup conda environment
@@ -134,6 +141,11 @@ Job script:
 
 ```
 qsub setup/d4z4ling_run_on_nci_gadi.sh
+```
+
+Job script with variable through job submission:
+```
+qsub setup/d4z4ling_run_on_nci_gadi.sh -v SAMPLE=${sample},OUTDIR=${outdir},UBAM=${ubam},REALPATH=/path/to/d4z4ling
 ```
 
 ## Available default input file
