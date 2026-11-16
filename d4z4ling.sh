@@ -82,26 +82,24 @@ elif [[  ( ! -z "$INPUT_FASTQ" ) && ( -f "$INPUT_FASTQ") ]]; then
     INPUT_UBAM="${OUTDIR}/${FASTQ_BASE%.fastq}.bam"
 fi
 
-echo "MERYL"
 # Define meryl outputs relative to the reference genome directory
 REF_NAME=$(basename $REF .fa)
-MERYL_DB="${REALPATH}/inputs/merylDB_${REF_NAME}"
-REPETITIVE_REGIONS="${REALPATH}/inputs/${REF_NAME}_repetitive_k15.txt"
+MERYL_DB="${REALPATH}/genome/merylDB_${REF_NAME}"
+REPETITIVE_REGIONS="${REALPATH}/genome/${REF_NAME}_repetitive_k15.txt"
 
 # Step 1: Pre-compute k-mer frequency (only if meryl output does not exist)
 if [ ! -d "$MERYL_DB" ]; then
-    echo "Creating meryl database..."
-    meryl count k=15 output "$MERYL_DB" "$REF"
-else
-    echo "Meryl database already exists at $MERYL_DB. Skipping this step."
+    echo "Meryl database does not exist at $MERYL_DB"
+    echo "Run genome/meryl.sh to create the meryl database and extract repetitive regions before proceeding."
+    echo "Exiting."
+    exit 1
 fi
 
 # Step 2: Extract repetitive regions (only if {refname}_repetitive_k15.txt does not exist)
 if [ ! -f "$REPETITIVE_REGIONS" ]; then
-    echo "Extracting repetitive regions..."
-    meryl print greater-than distinct=0.9998 "$MERYL_DB" > "$REPETITIVE_REGIONS"
-else
-    echo "Repetitive regions file already exists at $REPETITIVE_REGIONS. Skipping this step."
+    echo "Repetitive regions file does not exist at $REPETITIVE_REGIONS"
+    echo "Run genome/meryl.sh to create the meryl database and extract repetitive regions before proceeding."
+    exit 1
 fi
 
 # Run winnowmap alignment
