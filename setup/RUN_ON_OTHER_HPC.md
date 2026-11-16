@@ -51,6 +51,7 @@ Optional field would be adding these flags (which have default input if not adde
 --haplotype-refs {Path to D4Z4 haplotype references}
 --remove-intermediate-files {true/false}
 --minimap-ref-index {Path to minimap index file of reference}
+--threads {Number of threads}
 ```
 
 ## Available default input file
