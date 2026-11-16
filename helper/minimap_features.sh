@@ -7,6 +7,7 @@ PREFIX=$2
 READS=$3
 
 PSLTOBED=pslToBed #/g/data/if89/apps/kentutils/0.0/bin/pslToBed
+[ -z ${FSHD_PYTHON} ] && FSHD_PYTHON=python3
 
 FEATURES_FASTA=$4
 SHORT_FASTA=$5
@@ -74,7 +75,7 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_mapped_features.bam" > "${OUTDIR}/${PR
 # convert bam -> sam -> psl
 samtools view -h "${OUTDIR}/${PREFIX}_mapped_features.bam" > "${OUTDIR}/${PREFIX}_mapped_features.merged.sam"
 
-python3 ${REALPATH}/sam2psl.py \
+${FSHD_PYTHON} ${REALPATH}/sam2psl.py \
     -i "${OUTDIR}/${PREFIX}_mapped_features.merged.sam" \
     -o "${OUTDIR}/${PREFIX}_mapped_features.merged.psl"
 
