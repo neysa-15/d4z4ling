@@ -40,12 +40,21 @@ module load Winnowmap/2.03
 module load kentutils/0.0
 module load blat/37
 
-source d4z4ling_venv/bin/activate
+REALPATH=${REALPATH:-$PBS_O_WORKDIR}
+echo "REALPATH: $REALPATH"
+
+source ${REALPATH}/d4z4ling_venv/bin/activate
+
+PSLTOBED=/g/data/if89/apps/kentutils/0.0/bin/pslToBed
+BG2BW=/g/data/if89/apps/kentutils/0.0/bin/bedGraphToBigWig
 
 if [[ $UBAM == *.fasta ]] || [[ $UBAM == *.fa ]]; then
     echo "Processing fasta file: $SAMPLE $UBAM"
-    ./d4z4ling_no_methylation.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-fasta ${UBAM}
+    ${REALPATH}/d4z4ling_no_methylation.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-fasta ${UBAM}
 else
     echo "Processing uBAM file: $SAMPLE $UBAM"
-    ./d4z4ling.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-ubam ${UBAM} --remove-intermediate-files true --minimap-ref-index /g/data/kr68/neysa/fshd_pipeline/inputs/hs1.mmi
+    ${REALPATH}/d4z4ling.sh --prefix ${SAMPLE} --outdir ${OUTDIR} --input-ubam ${UBAM} \
+		--remove-intermediate-files true \
+		--minimap-ref-index ${REALPATH}/genome/hs1.mmi \
+		--ref ${REALPATH}/genome/hs1.fa
 fi
