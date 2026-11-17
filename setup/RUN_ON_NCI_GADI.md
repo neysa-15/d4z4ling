@@ -83,6 +83,7 @@ Optional field would be adding these flags (which have default input if not adde
 --remove-intermediate-files {true/false}
 --minimap-ref-index {Path to minimap index file of reference}
 --threads {Number of threads}
+--analysis-mode {true/false to generate bigwig and plotly visualisation files}
 ```
 
 Job script:
@@ -135,6 +136,7 @@ Optional field would be adding these flags (which have default input if not adde
 --remove-intermediate-files {true/false}
 --minimap-ref-index {Path to minimap index file of reference}
 --threads {Number of threads}
+--analysis-mode {true/false to generate bigwig and plotly visualisation files}
 ```
 
 Job script:

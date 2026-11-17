@@ -19,6 +19,7 @@ MMI=${REALPATH}/genome/hs1.mmi
 REMOVE_INTERMEDIATE_FILES=false
 FSHD1_STATUS=${REALPATH}/inputs/fshd1_status_template.tsv
 THREADS=8
+ANALYSIS_MODE=true
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -36,6 +37,7 @@ while [[ $# -gt 0 ]]; do
         --threads) THREADS="$2"; shift 2;;
         --remove-intermediate-files) REMOVE_INTERMEDIATE_FILES="$2"; shift 2;;
         --minimap-ref-index) MMI="$2"; shift 2;;
+        --analysis-mode) ANALYSIS_MODE="$2"; shift 2;;
         *) echo "Unknown option: $1"; exit 1;;
     esac
 done
@@ -320,51 +322,53 @@ if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.bed" ]; then
     exit 0
 fi
 
-# Check if genome.chrom.sizes exists
-if [ ! -f "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" ]; then
-    echo "Creating ${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes in $OUTDIR..."
+# Build chrom.sizes from the reads-of-interest fasta if missing
+make_chrom_sizes() {
+    local fasta="${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
+    local sizes="${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes"
 
-    # Generate .fai index for the reference if it doesn't exist
-    if [ ! -f "${OUTDIR}/${PREFIX}_reads_of_interest.fasta.fai" ]; then
-        $SAMTOOLS faidx "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
+    if [[ -f "$sizes" ]]; then
+        echo "$sizes already exists."
+        return
     fi
 
-    # Create genome.chrom.sizes from the .fai index
-    cut -f1,2 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta.fai" > "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes"
-else
-    echo "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes already exists in $OUTDIR."
+    echo "Creating $sizes..."
+    [[ -f "${fasta}.fai" ]] || $SAMTOOLS faidx "$fasta"
+    cut -f1,2 "${fasta}.fai" > "$sizes"
+}
+
+# Filter methylation calls by probability and convert to bigWig
+# $1 = label (used in filenames/messages), $2 = awk condition on $5
+make_meth_bw() {
+    local label=$1 cond=$2
+    local bed="${OUTDIR}/${PREFIX}_meth_reads.bed"
+    local bg="${OUTDIR}/${PREFIX}_meth_reads.${label}.bedGraph"
+    local bw="${OUTDIR}/${PREFIX}_meth_reads.${label}.bw"
+    local sizes="${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes"
+
+    awk -v OFS='\t' "${cond} {print \$1, \$2, \$3, \$5}" "$bed" \
+        | LC_ALL=C sort -k1,1 -k2,2n > "$bg"
+
+    if [[ -s "$bg" ]]; then
+        ${BG2BW} "$bg" "$sizes" "$bw"
+    else
+        echo "No ${label} methylation calls found. Skipping bigWig."
+    fi
+
+    rm -f "$bg"
+}
+
+if [[ "$ANALYSIS_MODE" == true ]]; then
+    echo "Running analysis mode: Create BW file and plotly report"
+
+    make_chrom_sizes
+    make_meth_bw high_prob '$5 > 0.75'
+    make_meth_bw low_prob  '$5 < 0.25'
+    make_meth_bw undefined '$5 >= 0.25 && $5 <= 0.75'
+
+    ${FSHD_PYTHON} "${REALPATH}/helper/report_plotly.py" \
+        --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
 fi
-
-# High probability (> 0.75)
-awk '$5 > 0.75 {print $1, $2, $3, $5}' "${OUTDIR}/${PREFIX}_meth_reads.bed" | sort -k1,1 -k2,2n > "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph"
-if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" ]; then
-    echo "No high probability methylation calls found. Skipping bigWig generation for high probability calls."
-else
-    ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bw"
-fi
-
-# Low probability (< 0.25)
-awk '$5 < 0.25 {print $1, $2, $3, $5}' "${OUTDIR}/${PREFIX}_meth_reads.bed" | sort -k1,1 -k2,2n > "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph"
-if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" ]; then
-    echo "No low probability methylation calls found. Skipping bigWig generation for low probability calls."
-else
-    ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bw"
-fi
-
-# Undefined (0.25 <= x <= 0.75)
-awk '$5 >= 0.25 && $5 <= 0.75 {print $1, $2, $3, $5}' "${OUTDIR}/${PREFIX}_meth_reads.bed" | sort -k1,1 -k2,2n > "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph"
-if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph" ]; then
-    echo "No undefined probability methylation calls found. Skipping bigWig generation for undefined probability calls."
-else
-    ${BG2BW} "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph" "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bw"
-fi
-
-# Remove intermediate files
-rm "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph"
-
-# Create plotly reports
-${FSHD_PYTHON} ${REALPATH}/helper/report_plotly.py \
-    --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
 
 # Remove intermediate files
 if [[ "$REMOVE_INTERMEDIATE_FILES" == true ]]; then
