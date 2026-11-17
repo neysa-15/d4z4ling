@@ -370,6 +370,51 @@ if [[ "$ANALYSIS_MODE" == true ]]; then
         --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
 fi
 
+# -----------------------------------------
+# Limit Of Detection calculation
+# -----------------------------------------
+count=$(awk -F'\t' '
+NR==1 {
+    # find column indexes
+    for (i=1; i<=NF; i++) {
+        if ($i == "MappedEstimatedCopies") c1 = i
+        if ($i == "Haplotype") c2 = i
+    }
+    next
+}
+
+{
+    gsub(/\r/, "", $0)
+
+    # count matches
+    if ($c2 == "4qA" && $c1 > 3) {
+        count++
+    }
+}
+
+END {
+    print count + 0   # ensure numeric output
+}
+' "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv")
+
+if [ "$count" -gt 0 ]; then
+    lod=$(bash ${REALPATH}/helper/lod.sh "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv")
+
+    echo $lod > "${OUTDIR}/${PREFIX}_LOD.txt"
+
+    echo "LOD: $lod"
+    lod_prob=$(echo $lod | cut -f2 -d" ")
+    #
+    lod_status=$(echo $lod | cut -f3 -d" ")
+    if [ "$lod_status" == "TRUE" ]; then
+        echo "✅ Enough data to be $lod_prob confident of negative FSHD (≥ Threshold (0.95))"
+    else
+        echo "❌ LOD did not meet the threshold of >= 0.95 (Probability = $lod_prob)"
+    fi
+else
+    echo "No 4qA rows with MappedEstimatedCopies > 3"
+fi
+
 # Remove intermediate files
 if [[ "$REMOVE_INTERMEDIATE_FILES" == true ]]; then
     rm ${OUTDIR}/${PREFIX}_*blast*
