@@ -1,5 +1,6 @@
 # d4z4ling
-Pre-print: https://www.medrxiv.org/content/10.64898/2025.12.06.25340828v1
+- Publication: https://www.nature.com/articles/s41467-026-75144-z
+- Pre-print: https://www.medrxiv.org/content/10.64898/2025.12.06.25340828v1
 
 ## Contents
 - [d4z4ling](#d4z4ling)
@@ -8,7 +9,7 @@ Pre-print: https://www.medrxiv.org/content/10.64898/2025.12.06.25340828v1
   - [d4z4ling overview](#d4z4ling-overview)
   - [Usage](#usage)
   - [Outputs](#outputs)
-  - [Publications](#publications)
+    - [Limit of Detection (LOD)](#limit-of-detection-lod)
   - [References](#references)
   - [Acknowledgments](#acknowledgments)
   - [Changelog](#changelog)
@@ -87,9 +88,14 @@ Showing number of D4Z4 copies vs methylation level of each read.
 - The number of copies above 10 and hypermethylated reads supports non-FSHD diagnosis.  
 - Low hypomethylation on all the different haplotypes support diagnosis of FSHD2, although further checks are required to check and validate variants on SMCHD1, DNMT3B, and LRIF1
 
-## Publications
+### Limit of Detection (LOD)
+In harder cases, where a sample carries two 4qA haplotypes that both have very long D4Z4 arrays, not finding a contracted allele doesn’t necessarily mean one isn’t there. It may simply not have been captured in the reads. To account for this, `d4z4ling.sh` calls `helper/lod.sh`, which estimates the probability that a contracted 4qA allele would have been detected if it were present. A contraction is confidently ruled out only when this probability is at least 0.95.
 
-Pre-print: https://www.medrxiv.org/content/10.64898/2025.12.06.25340828v1
+Results are written to `sample_LOD.txt` with three columns: sample ID, detection probability, and whether the 95% threshold is met (TRUE/FALSE). For example, the subsetted HG01811 demo data gives:
+```
+HG01811 0.7117575659    FALSE
+```
+The detection probability here is ~71%, below the 95% threshold, so there isn’t enough data to rule out a contracted D4Z4 array in this sample.
 
 ## References
 
