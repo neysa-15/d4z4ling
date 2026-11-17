@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.2.2] - 2026-11-17
+### Added
+- Added `--threads` as variable
+- Added `genome/` for user installed input instead of being in `inputs/`
+  - Added `genome/meryl.sh` for meryl DB setup
+  - Added `genome/download_ref_chm13.sh` for reference genome installation and indexing
+
+### Changed
+- Moved user installed inputs (e.g. reference) to a separate directory
+- Meryl setup no longer in `d4z4ling.sh` but in `genome/meryl.sh` for multiple runs purpose
+- Adjusted default variable based on genome file moves in `d4z4ling.sh`
+- Set tools used in script as variable
+- Adjusted SSLP column to exist by default
+
+### Fixed
+- Fixed relative path issues
+- Remove extra spacing in the file
+- Remove NCI gadi user specific module calls in main scripts
+- Updated setup documentation according to the changes in this version
+
+## [0.2.1] - 2026-10-18
+### Fixed
+- Adjusted `helper/minimap_features.sh` to fix duplicate reads on rerun into the same output directory
+- Change `--PLAM` to `--plam` in both `setup/RUN_ON_NCI_GADI.md` and `setup/RUN_ON_OTHER_HPC.md`
+
 ## [0.2.0] - 2026-07-09
 ### Added
 - Added option to use conda environment

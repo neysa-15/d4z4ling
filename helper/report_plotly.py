@@ -22,7 +22,7 @@ def get_distribution_plot(df, threshold=33000):
     threshold_kb = threshold #/ 1000
 
     x_min, x_max = df["ReadLength"].min(), df["ReadLength"].max()
-    
+
     # Create tick marks for better x-axis readability
     tick_vals = np.linspace(x_min, x_max, num=10)  # Adjust number of ticks as needed
 
@@ -30,14 +30,14 @@ def get_distribution_plot(df, threshold=33000):
     fig = ff.create_distplot(
         [df["ReadLength"]],  # Data for distribution
         ["ReadLength"],  # Label
-        show_hist=False,  
+        show_hist=False,
         show_rug=False,
         colors=["blue"]  # Apply color
     )
 
     # Fix x-axis to show correct ReadLength values
     fig.update_xaxes(
-        title_text=f"ReadLength (kb)",  
+        title_text=f"ReadLength (kb)",
         range=[x_min, x_max],  # Set x-axis range to match ReadLength values
         tickvals=tick_vals,  # Set tick values to align with ReadLength
         tickformat=".1f"  # Format to 1 decimal place
@@ -113,7 +113,7 @@ def get_methylation_plot_plotly(df, haplotype, unique_labels, color_map):
 
     # filter out copies under 3
     df = df[df["MappedEstimatedCopies"] >= 3]
- 
+
     # Determine max number of copies and add 5
     max_copies = df["MappedEstimatedCopies"].max() + 5
 
@@ -179,7 +179,7 @@ def get_4qA_restriction_site_plot_plotly(df, unique_labels, color_map):
     # Set both axes to the same range
     fig.update_xaxes(range=[0, max_range])
     fig.update_yaxes(range=[0, max_range])
-    
+
     fig.update_traces(marker=dict(size=MARKER_SIZE,  opacity=0.5))
 
     return fig
@@ -196,13 +196,13 @@ def combine_plots(df, dir_path, sample, unique_labels, color_map):
             [{"colspan": 2}, None],  # Row 1
             [{}, {}],
             [{}, {}],
-            [{}, {}] 
+            [{}, {}]
         ],
         subplot_titles=["Read length distribution plot", "", "D4Z4 Repeat Length Dot Plot", "4qA Methylation vs D4Z4 Copies", "4qB Methylation vs D4Z4 Copies", "10qA Methylation vs D4Z4 Copies", "10qB Methylation vs D4Z4 Copies", "4qA Restriction Sites"],
         row_heights=[0.4, 0.4, 0.6, 0.6, 0.6],
         vertical_spacing=0.05
     )
-   
+
     traces = []
 
     # Row 0 (Distribution Plot)
@@ -290,15 +290,15 @@ def combine_plots(df, dir_path, sample, unique_labels, color_map):
     # Adjust layout
     fig.update_layout(
         title=dict(text=f"{sample} report", font=dict(size=40)),
-        height=3500, 
-        width=2200, 
+        height=3500,
+        width=2200,
         showlegend=True,
         plot_bgcolor="white",
         paper_bgcolor="white",
     )
 
-    for row in range(1, 6):  
-        for col in range(1, 6):  
+    for row in range(1, 6):
+        for col in range(1, 6):
             fig.update_xaxes(showline=True, linecolor="black", mirror=True, row=row, col=col)
             fig.update_yaxes(showline=True, linecolor="black", mirror=True, row=row, col=col)
 

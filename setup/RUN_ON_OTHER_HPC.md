@@ -3,6 +3,7 @@
   - [Pre-requisite](#pre-requisite)
   - [Setup conda environment](#setup-conda-environment)
   - [Reference Genome](#reference-genome)
+    - [Generate meryl database for repetitive region mapping](#generate-meryl-database-for-repetitive-region-mapping)
   - [Run](#run)
   - [Available default input file](#available-default-input-file)
 
@@ -21,16 +22,14 @@ conda activate /path/to/conda_env_d4z4ling
 ```
 
 ## Reference Genome
-Get a copy of the hs1 (T2T-CHM13) reference genome
+Get a copy of the hs1 (T2T-CHM13) reference genome and create indexes.
 ```
-rsync -a -P rsync://hgdownload.soe.ucsc.edu/goldenPath/hs1/bigZips/hs1.fa.gz inputs/.
-gunzip inputs/hs1.fa.gz
-samtools faidx inputs/hs1.fa
+bash ./genome/download_ref_chm13.sh
 ```
 
-Run minimap2 reference indexing for script input (For efficiency purposes when running for multiple samples to the same reference)
+### Generate meryl database for repetitive region mapping
 ```
-minimap2 -d inputs/hs1.mmi {Path to chm13 fasta}
+bash ./genome/meryl.sh
 ```
 
 ## Run
@@ -51,6 +50,7 @@ Optional field would be adding these flags (which have default input if not adde
 --haplotype-refs {Path to D4Z4 haplotype references}
 --remove-intermediate-files {true/false}
 --minimap-ref-index {Path to minimap index file of reference}
+--threads {Number of threads}
 ```
 
 ## Available default input file

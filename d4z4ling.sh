@@ -2,20 +2,23 @@
 
 set -e # <-- abort on any error
 
+REALPATH=$(dirname "$(readlink -f "$0")")
+
 # Default inputs
 INPUT_UBAM=""                            # Unaligned BAM
 INPUT_FASTQ=""
-REF=inputs/hs1.fa           # Reference genome
-REGION_BED=inputs/d4z4_region.chm13.bed
-FEATURES_FASTA=inputs/features.fasta
-SHORT_FEATURES=inputs/short_features.fasta
-PLAM=inputs/pLAM.fasta
+REF=${REALPATH}/genome/hs1.fa           # Reference genome
+REGION_BED=${REALPATH}/inputs/d4z4_region.chm13.bed
+FEATURES_FASTA=${REALPATH}/inputs/features.fasta
+SHORT_FEATURES=${REALPATH}/inputs/short_features.fasta
+PLAM=${REALPATH}/inputs/pLAM.fasta
 PREFIX="SAMPLE"
 OUTDIR="$PREFIX"
-HAPLOTYPE_REFS=inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
-MMI="inputs/hs1.mmi"
+HAPLOTYPE_REFS=${REALPATH}/inputs/d4z4_repeats.fasta  # Fasta file containing haplotype-specific references
+MMI=${REALPATH}/genome/hs1.mmi
 REMOVE_INTERMEDIATE_FILES=false
-FSHD1_STATUS="inputs/fshd1_status_template.tsv"
+FSHD1_STATUS=${REALPATH}/inputs/fshd1_status_template.tsv
+THREADS=8
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -30,6 +33,7 @@ while [[ $# -gt 0 ]]; do
         --short-features-fasta) SHORT_FEATURES="$2"; shift 2;;
         --plam) PLAM="$2"; shift 2;;
         --haplotype-refs) HAPLOTYPE_REFS="$2"; shift 2;;
+        --threads) THREADS="$2"; shift 2;;
         --remove-intermediate-files) REMOVE_INTERMEDIATE_FILES="$2"; shift 2;;
         --minimap-ref-index) MMI="$2"; shift 2;;
         *) echo "Unknown option: $1"; exit 1;;
@@ -43,8 +47,12 @@ if [[ (-z "$INPUT_UBAM" || ! -f "$INPUT_UBAM") && (-z "$INPUT_FASTQ" || ! -f "$I
 fi
 
 # Paths to conversion tools
-PSLTOBED=pslToBed
-BG2BW=bedGraphToBigWig
+[ -z ${PSLTOBED} ] && PSLTOBED=pslToBed
+[ -z ${BG2BW} ] && BG2BW=bedGraphToBigWig
+
+[ -z ${SAMTOOLS} ] && SAMTOOLS=samtools
+[ -z ${MINIMAP2} ] && MINIMAP2=minimap2
+[ -z ${FSHD_PYTHON} ] && FSHD_PYTHON=python3
 
 # Parameters
 MAPQ=30
@@ -64,80 +72,79 @@ if [[  ( ! -z "$INPUT_UBAM" ) && ( -f "$INPUT_UBAM") ]]; then
     ubam_exist=true
     # INPUT_FASTQ=basename "$INPUT_UBAM" .bam
     UBAM_BASE=$(basename $INPUT_UBAM)
-    samtools fastq -TMM,ML "$INPUT_UBAM" > "${OUTDIR}/${UBAM_BASE%.bam}.fastq"
+    $SAMTOOLS fastq -TMM,ML "$INPUT_UBAM" > "${OUTDIR}/${UBAM_BASE%.bam}.fastq"
     # samtools fastq -TMM,ML "$INPUT_UBAM" > "${INPUT_UBAM%.bam}.fastq"
     INPUT_FASTQ="${OUTDIR}/${UBAM_BASE%.bam}.fastq"
 elif [[  ( ! -z "$INPUT_FASTQ" ) && ( -f "$INPUT_FASTQ") ]]; then
     fastq_exist=true
     FASTQ_BASE=$(basename $INPUT_FASTQ)
-    samtools import -u -s "$INPUT_FASTQ" -o "${OUTDIR}/${FASTQ_BASE%.fastq}.bam"
+    $SAMTOOLS import -u -s "$INPUT_FASTQ" -o "${OUTDIR}/${FASTQ_BASE%.fastq}.bam"
     INPUT_UBAM="${OUTDIR}/${FASTQ_BASE%.fastq}.bam"
 fi
 
-echo "MERYL"
 # Define meryl outputs relative to the reference genome directory
 REF_NAME=$(basename $REF .fa)
-MERYL_DB="inputs/merylDB_${REF_NAME}"
-REPETITIVE_REGIONS="inputs/${REF_NAME}_repetitive_k15.txt"
+MERYL_DB="${REALPATH}/genome/merylDB_${REF_NAME}"
+REPETITIVE_REGIONS="${REALPATH}/genome/${REF_NAME}_repetitive_k15.txt"
 
 # Step 1: Pre-compute k-mer frequency (only if meryl output does not exist)
 if [ ! -d "$MERYL_DB" ]; then
-    echo "Creating meryl database..."
-    meryl count k=15 output "$MERYL_DB" "$REF"
-else
-    echo "Meryl database already exists at $MERYL_DB. Skipping this step."
+    echo "Meryl database does not exist at $MERYL_DB"
+    echo "Run genome/meryl.sh to create the meryl database and extract repetitive regions before proceeding."
+    echo "Exiting."
+    exit 1
 fi
 
 # Step 2: Extract repetitive regions (only if {refname}_repetitive_k15.txt does not exist)
 if [ ! -f "$REPETITIVE_REGIONS" ]; then
-    echo "Extracting repetitive regions..."
-    meryl print greater-than distinct=0.9998 "$MERYL_DB" > "$REPETITIVE_REGIONS"
-else
-    echo "Repetitive regions file already exists at $REPETITIVE_REGIONS. Skipping this step."
+    echo "Repetitive regions file does not exist at $REPETITIVE_REGIONS"
+    echo "Run genome/meryl.sh to create the meryl database and extract repetitive regions before proceeding."
+    exit 1
 fi
 
 # Run winnowmap alignment
-# echo "WINNOWMAP" 
+# echo "WINNOWMAP"
 # winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
-#         samtools view -L "$REGION_BED" -Sb | \
-#         samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
+#         $SAMTOOLS view -L "$REGION_BED" -Sb | \
+#         $SAMTOOLS sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
 echo "minimap winnowmap"
 # MMI="${OUTDIR}/${REF_NAME}.mmi"
-# minimap2 -x $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
+# $MINIMAP2 -x $MODE "$REF" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
 #  -r 500,100k --rmq=yes -f 0.001
-minimap2 -x $MODE -a "$MMI" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
-        samtools view -L "$REGION_BED" -Sb | \
-        samtools sort -o "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
+$MINIMAP2 -x $MODE -a "$MMI" "$INPUT_FASTQ" -t ${PBS_NCPUS:-8} | \
+        $SAMTOOLS view -L "$REGION_BED" -Sb | \
+        $SAMTOOLS sort -o "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
 
-samtools index "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
+$SAMTOOLS index "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam"
 
-if [[ $(samtools view -c "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam") -eq 0 ]]; then
+if [[ $($SAMTOOLS view -c "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam") -eq 0 ]]; then
     echo "No reads mapped to the region of interest. Exiting."
 
     # Remove temp created fastq/ubam
-    if [[ $ubam_exist ]]; then
+    if [[ "$ubam_exist" == true ]]; then
         rm "${INPUT_FASTQ}"
-    elif [[ $fastq_exist ]]; then
+    elif [[ "$fastq_exist" == true ]]; then
         rm "${INPUT_UBAM}"
     fi
-    
+
     exit 0
 fi
 
+echo "Remapping with winnowmap to CHM13"
 # Remap with winnowmap to CHM13
-samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
-    samtools fastq -TMM,ML - | \
+$SAMTOOLS view -N <($SAMTOOLS view "${OUTDIR}/${PREFIX}_d4z4_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
+    $SAMTOOLS fastq -TMM,ML - | \
     winnowmap -W ${REPETITIVE_REGIONS} -Y -y -ax $MODE "$REF" - -t ${PBS_NCPUS:-8} | \
-    samtools view -L "$REGION_BED" -Sb | \
-    samtools sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
+    $SAMTOOLS view -L "$REGION_BED" -Sb | \
+    $SAMTOOLS sort -o "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
-samtools index "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
+$SAMTOOLS index "${OUTDIR}/${PREFIX}_reads_of_interest.bam"
 
 # Generate FASTA from uBAM
 echo "Generating FASTA from uBAM"
-samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b "$INPUT_UBAM" | \
-	samtools fasta > "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
+$SAMTOOLS view -N <($SAMTOOLS view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b "$INPUT_UBAM" | \
+	$SAMTOOLS fasta > "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
 
 # Convert BAM to BED
 echo "Converting BAM to BED"
@@ -148,7 +155,7 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_reads_of_interest.bam" > "${OUTDIR}/${
 #######################################
 
 # map features
-./helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "$SHORT_FEATURES" "$PLAM"
+${REALPATH}/helper/minimap_features.sh "$OUTDIR" "$PREFIX" "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "$FEATURES_FASTA" "$SHORT_FEATURES" "$PLAM"
 
 # Map SSLP
 seqkit amplicon --bed -F GGTGGAGTTCTGGTTTCAGC -R CCTGTGCTTCAGAGGCATTTG -m 2 "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" > "${OUTDIR}/${PREFIX}_SSLP.bed"
@@ -175,8 +182,8 @@ for chrom in chr4 chr10; do
 
     # Align reads to the haplotype-specific reference
     aligned_bam="${OUTDIR}/${PREFIX}_${haplotype}_aligned.bam"
-    minimap2 --secondary=no --MD -ax map-ont "$haplotype_ref" "$haplotype_reads" | samtools sort -o "$aligned_bam"
-    samtools index "$aligned_bam"
+    $MINIMAP2 --secondary=no --MD -ax map-ont "$haplotype_ref" "$haplotype_reads" | $SAMTOOLS sort -o "$aligned_bam"
+    $SAMTOOLS index "$aligned_bam"
 
     # Add the BAM file to the array
     aligned_bams+=("$aligned_bam")
@@ -191,15 +198,15 @@ echo "Merging haplotype-aligned BAM files"
 merged_bam="${OUTDIR}/${PREFIX}_aligned_haplotypes.bam"
 
 # Use samtools to merge all BAM files from the array
-samtools merge -f "$merged_bam" "${aligned_bams[@]}"
-samtools index "$merged_bam"
+$SAMTOOLS merge -f "$merged_bam" "${aligned_bams[@]}"
+$SAMTOOLS index "$merged_bam"
 
 # Remove individual haplotype BAM files and their indexes
 rm "${aligned_bams[@]}" "${aligned_bams[@]/%.bam/.bam.bai}"
 
 # Step 8: Parse PSL to generate a summary table
-echo "Parsing PSL to generate summary table" 
-python3 helper/read_classification.py \
+echo "Parsing PSL to generate summary table"
+${FSHD_PYTHON} ${REALPATH}/helper/read_classification.py \
     --psl "${OUTDIR}/${PREFIX}_mapped_features.psl" \
     --bed "${OUTDIR}/${PREFIX}_reads_of_interest.bed" \
     --output "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
@@ -209,10 +216,10 @@ python3 helper/read_classification.py \
 
 ## Step 12: Generate ordered alignment sequences
 echo "Generating ordered alignment sequences"
-alignment_script="helper/alignment_order_clipping.py"
+alignment_script="${REALPATH}/helper/alignment_order_clipping.py"
 
 # Run the alignment order script
-python3 "$alignment_script" \
+${FSHD_PYTHON} "$alignment_script" \
     --bam "${OUTDIR}/${PREFIX}_aligned_haplotypes.bam" \
     --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" \
     --output_table "${OUTDIR}/${PREFIX}_d4z4_units.tsv" \
@@ -222,7 +229,7 @@ python3 "$alignment_script" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed"
 
 # Get potential hybrid reads by looking for supplementary alignments
-samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | awk '{
+$SAMTOOLS view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | awk '{
     primary_chr = $3
     for (i=12; i<=NF; i++) {
         if ($i ~ /^SA:Z:/) {
@@ -242,14 +249,14 @@ samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | awk '{
 }' > "${OUTDIR}/${PREFIX}_potential_hybrid.tsv"
 
 # Flag for gaps and overlaps
-python3 helper/flag_repeats.py \
+${FSHD_PYTHON} ${REALPATH}/helper/flag_repeats.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
     --hybrid "${OUTDIR}/${PREFIX}_potential_hybrid.tsv" \
     --fasta "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
 
 # Unify features and repeats into a single bed and add colour
-python3 helper/add_colors_to_bed.py \
+${FSHD_PYTHON} ${REALPATH}/helper/add_colors_to_bed.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --features_bed "${OUTDIR}/${PREFIX}_mapped_features.bed" \
     --repeats_bed "${OUTDIR}/${PREFIX}_d4z4_repeats.bed" \
@@ -257,30 +264,30 @@ python3 helper/add_colors_to_bed.py \
     --output_bed "${OUTDIR}/${PREFIX}_all_features.bed"
 
 # reannotate distal haplotype when identified as the 4qA long haplotype (DUX4L)
-./helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
+${REALPATH}/helper/distal_haplotype_blast.sh "${OUTDIR}" "${PREFIX}"
 
 # Check for overlapping repeats after distal haplotype re-annotation
 ANNOTATED_BED="${OUTDIR}/${PREFIX}_all_features.bed"
-python3 -c "
+PYTHONPATH="${REALPATH}" ${FSHD_PYTHON} -c "
 from helper import alignment_order_clipping
 alignment_order_clipping.filter_d4z4_bed(
     '${ANNOTATED_BED}'
 )
 " 2>&1
 
-samtools view -N <(samtools view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
-    samtools fastq -TMM,ML - | minimap2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
-    samtools view -F 2308 -b - | \
-    samtools sort -@ ${THREADS} - > "${OUTDIR}/${PREFIX}_meth_reads.bam"    
+$SAMTOOLS view -N <($SAMTOOLS view "${OUTDIR}/${PREFIX}_reads_of_interest.bam" | cut -f1 | sort | uniq) -b ${INPUT_UBAM} | \
+    $SAMTOOLS fastq -TMM,ML - | $MINIMAP2 -t ${THREADS} -Y -y -x asm5 -a --secondary=no "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" - | \
+    $SAMTOOLS view -F 2308 -b - | \
+    $SAMTOOLS sort -@ ${THREADS} - > "${OUTDIR}/${PREFIX}_meth_reads.bam"
 
 # Index the resulting BAM file
-samtools index "${OUTDIR}/${PREFIX}_meth_reads.bam"
+$SAMTOOLS index "${OUTDIR}/${PREFIX}_meth_reads.bam"
 
 # use minimod to get meth probabilities for each CpG within a given read
 minimod view -c m "${OUTDIR}/${PREFIX}_reads_of_interest.fasta" "${OUTDIR}/${PREFIX}_meth_reads.bam" | awk 'NR > 1 {print $4"\t"$5"\t"$5+1"\t.\t"$7}' > "${OUTDIR}/${PREFIX}_meth_reads.bed"
 
 fshd1_read_status_tsv="${OUTDIR}/${PREFIX}_fshd1_status_counts.tsv"
-python3 helper/methylation_summary.py \
+${FSHD_PYTHON} ${REALPATH}/helper/methylation_summary.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv" \
     --features_bed "${OUTDIR}/${PREFIX}_all_features.bed" \
     --meth "${OUTDIR}/${PREFIX}_meth_reads.bed" \
@@ -296,7 +303,7 @@ if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.bed" ]; then
     echo "No methylation calls found. Exiting."
 
     # Remove intermediate files
-    if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
+    if [[ "$REMOVE_INTERMEDIATE_FILES" == true ]]; then
         rm ${OUTDIR}/${PREFIX}_*blast*
         rm ${OUTDIR}/${PREFIX}_*top*
         rm ${OUTDIR}/${PREFIX}_*psl
@@ -304,9 +311,9 @@ if [ ! -s "${OUTDIR}/${PREFIX}_meth_reads.bed" ]; then
     fi
 
     # Remove temp created fastq/ubam
-    if [[ $ubam_exist ]]; then
+    if [[ "$ubam_exist" == true ]]; then
         rm "${INPUT_FASTQ}"
-    elif [[ $fastq_exist ]]; then
+    elif [[ "$fastq_exist" == true ]]; then
         rm "${INPUT_UBAM}"
     fi
 
@@ -316,10 +323,10 @@ fi
 # Check if genome.chrom.sizes exists
 if [ ! -f "${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes" ]; then
     echo "Creating ${OUTDIR}/${PREFIX}_reads_of_interest.chrom.sizes in $OUTDIR..."
-    
+
     # Generate .fai index for the reference if it doesn't exist
     if [ ! -f "${OUTDIR}/${PREFIX}_reads_of_interest.fasta.fai" ]; then
-        samtools faidx "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
+        $SAMTOOLS faidx "${OUTDIR}/${PREFIX}_reads_of_interest.fasta"
     fi
 
     # Create genome.chrom.sizes from the .fai index
@@ -356,11 +363,11 @@ fi
 rm "${OUTDIR}/${PREFIX}_meth_reads.high_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.low_prob.bedGraph" "${OUTDIR}/${PREFIX}_meth_reads.undefined.bedGraph"
 
 # Create plotly reports
-python3 helper/report_plotly.py \
+${FSHD_PYTHON} ${REALPATH}/helper/report_plotly.py \
     --main_tsv "${OUTDIR}/${PREFIX}_mapped_features_summary.tsv"
 
 # Remove intermediate files
-if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
+if [[ "$REMOVE_INTERMEDIATE_FILES" == true ]]; then
     rm ${OUTDIR}/${PREFIX}_*blast*
     rm ${OUTDIR}/${PREFIX}_*top*
     rm ${OUTDIR}/${PREFIX}_*psl
@@ -368,8 +375,8 @@ if [[ $REMOVE_INTERMEDIATE_FILES ]]; then
 fi
 
 # Remove temp created fastq/ubam
-if [[ $ubam_exist ]]; then
+if [[ "$ubam_exist" == true ]]; then
     rm "${INPUT_FASTQ}"
-elif [[ $fastq_exist ]]; then
+elif [[ "$fastq_exist" == true ]]; then
     rm "${INPUT_UBAM}"
 fi

@@ -1,24 +1,8 @@
 #!/bin/bash -l
-#PBS -P kr68
-#PBS -q normal
-#PBS -l walltime=04:00:00
-#PBS -l ncpus=48
-#PBS -l mem=192GB
-#PBS -l storage=gdata/kr68+gdata/if89+scratch/kr68
-#PBS -l jobfs=10GB
-#PBS -l wd
 
 # set -e
 
-module unload python3
-module unload blast
-module unload seqkit
-module unload bedtools
-
-module load python3/3.12.1
-module load blast/2.14.1
-module load seqkit/2.9.0
-module load bedtools/2.31.0
+REALPATH=$(dirname "$(readlink -f "$0")")
 
 OUTDIR=$1
 PREFIX=$2
@@ -130,7 +114,7 @@ fi
 export BLASTDB_LMDB_MAP_SIZE=200000000
 
 # BLAST distal copy to DUX4 sequence
-DUX4_SEQUENCES=inputs/dux4_genbank.fasta
+DUX4_SEQUENCES=${REALPATH}/../inputs/dux4_genbank.fasta
 DUX4_DB=${OUTDIR}/${PREFIX}_db
 BLAST_RESULTS=${OUTDIR}/${PREFIX}_dux4.blast.tsv
 makeblastdb -in "${DUX4_SEQUENCES}" -dbtype nucl -out ${DUX4_DB}
@@ -227,12 +211,12 @@ if (( $(echo "$percentage_longvar > 70" | bc -l) )); then
     fgrep -f  "$match_read_tmp" "$DISTAL_COORDS_BED" > "$tmp_update_bed"
 
     # Step 3: Apply updates to all_features.bed
-    awk 'BEGIN{FS=OFS="\t"} 
+    awk 'BEGIN{FS=OFS="\t"}
     NR==FNR {
         key=$1"\t"$4
         updates[key]=$2 OFS $3 OFS $7
         next
-    } 
+    }
     {
         key=$1"\t"$4
         if (key in updates) {
@@ -251,4 +235,3 @@ if (( $(echo "$percentage_longvar > 70" | bc -l) )); then
     # Clean up
     rm $match_read_tmp $tmp_update_bed
 fi
- 

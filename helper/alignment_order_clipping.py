@@ -76,10 +76,10 @@ def update_main_tsv(main_tsv, xapi_counts, blni_counts):
 def detect_restriction_sites(sequence):
     """
     Detect restriction sites for XapI (R^AATTY) and BlnI (CCTAGG) in both strands of a genome.
-    
+
     Args:
         sequence (str): The genome sequence to search.
- 
+
     Returns:
         dict: A dictionary with enzyme names as keys and lists of positions (start, end, strand) as values.
     """
@@ -88,29 +88,29 @@ def detect_restriction_sites(sequence):
         "XapI": r"[AG]AATT[CT]",       # Forward pattern
         "BlnI": r"CCTAGG"              # Palindromic, same for reverse
     }
- 
+
     # Reverse complement patterns for non-palindromic enzymes
     reverse_patterns = {
         "XapI": r"[AG]TTAAT[CT]",      # Reverse complement of XapI
         "BlnI": r"CCTAGG"              # Same as forward for BlnI
     }
- 
+
     # Dictionary to store results
     restriction_sites = {enzyme: [] for enzyme in patterns}
- 
+
     for enzyme, pattern in patterns.items():
         # Search for the forward pattern
         for match in re.finditer(pattern, sequence):
             start = match.start()
             end = match.end()
             restriction_sites[enzyme].append((start, end, "+"))
- 
+
         # Search for the reverse complement pattern in the forward strand
         for match in re.finditer(reverse_patterns[enzyme], sequence):
             start = match.start()
             end = match.end()
             restriction_sites[enzyme].append((start, end, "-"))
- 
+
     return restriction_sites
 
 def reverse_complement(sequence):
@@ -174,7 +174,7 @@ def get_repeat_coords(repeat_sequence, original_sequence):
     elif repeat_sequence in str(Seq(original_sequence).reverse_complement()):
         final_coord = len(original_sequence)
         results = [(final_coord - m.end(), final_coord - m.start()) for m in re.finditer(repeat_sequence, str(Seq(original_sequence).reverse_complement()))]
-    
+
     return results
 
 def get_order(read, original_sequence):
@@ -212,7 +212,7 @@ def get_order(read, original_sequence):
         supplementary_alignments = [sa for sa in sa_tag.split(";") if sa]
 
         for alignment in supplementary_alignments:
-                           
+
             alignment_info = alignment.split(",")
             chrom = alignment_info[0]
             start = int(alignment_info[1]) - 1  # Convert to 0-based
@@ -282,7 +282,7 @@ def get_distal_d4z4_coords(df):
 
     strand = df["strand"].iloc[0]
 
-    if strand == "+":  
+    if strand == "+":
         # Get the row with max d4z4_num
         distal_d4z4 = df.loc[df["d4z4_num"].idxmax()]
 
@@ -293,7 +293,7 @@ def get_distal_d4z4_coords(df):
             # If the first block size is 0, use the second largest
             distal_copy = distal_d4z4["d4z4_num"] - 1
             distal_d4z4 = df[df["d4z4_num"] == distal_copy].iloc[0] if (df["d4z4_num"] == distal_copy).any() else df.loc[df["d4z4_num"].idxmax()]
-    else:  
+    else:
         # Get d4z4_1, or fallback to min if missing
         distal_d4z4 = df[df["d4z4_num"] == 1].iloc[0] if (df["d4z4_num"] == 1).any() else df.loc[df["d4z4_num"].idxmin()]
 
@@ -315,7 +315,7 @@ def refine_read_label(main_tsv, repeats_bed, fasta_file):
     5. Check if coordinates in read from bed file to the end of the read is more than 3.3kb
     6. If yes, change the read label to "Partial Distal 4qB or 10qB", else keep it unclassified
     """
-    
+
     # put main tsv to df and filter only lines with "Unclassified" in read label
     main_tsv_df = pd.read_csv(main_tsv, sep="\t")
     main_tsv_df_unclassified = main_tsv_df[main_tsv_df["ReadLabel"].str.contains("Unclassified")]
@@ -428,7 +428,7 @@ def process_bam(bam_file, read_id, fasta_file, table_file, xapi_bed, blni_bed, r
                                 f"{read.query_name}:d4z4_\t"
                                 f"{strand}\n"
                             )
-                        
+
                     else:
                         start_pos = "NA"
                         end_pos = "NA"
@@ -535,7 +535,7 @@ if __name__ == "__main__":
     # Process each unique read ID and generate outputs
     for read_id in unique_read_ids:
         process_bam(args.bam, read_id, args.fasta, args.output_table, args.xapi_bed, args.blni_bed, args.repeats_bed)
-    
+
     print(f"Alignment details table generated: {args.output_table}")
 
     # Count sensitive repeats

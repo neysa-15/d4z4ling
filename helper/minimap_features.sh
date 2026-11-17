@@ -1,22 +1,13 @@
 #!/bin/bash -l
 
+REALPATH=$(dirname "$(readlink -f "$0")")
+
 OUTDIR=$1
 PREFIX=$2
 READS=$3
 
-# module unload samtools
-# module unload bedtools
-# module unload blat
-# module unload kentutils
-# module unload minimap2
-
-# module load samtools/1.19
-# module load bedtools/2.28.0
-# module load blat/37
-# module load kentutils/0.0
-# module load minimap2/2.22
-
 PSLTOBED=pslToBed #/g/data/if89/apps/kentutils/0.0/bin/pslToBed
+[ -z ${FSHD_PYTHON} ] && FSHD_PYTHON=python3
 
 FEATURES_FASTA=$4
 SHORT_FASTA=$5
@@ -84,7 +75,7 @@ bedtools bamtobed -i "${OUTDIR}/${PREFIX}_mapped_features.bam" > "${OUTDIR}/${PR
 # convert bam -> sam -> psl
 samtools view -h "${OUTDIR}/${PREFIX}_mapped_features.bam" > "${OUTDIR}/${PREFIX}_mapped_features.merged.sam"
 
-python3 helper/sam2psl.py \
+${FSHD_PYTHON} ${REALPATH}/sam2psl.py \
     -i "${OUTDIR}/${PREFIX}_mapped_features.merged.sam" \
     -o "${OUTDIR}/${PREFIX}_mapped_features.merged.psl"
 

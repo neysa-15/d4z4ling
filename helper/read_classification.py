@@ -16,6 +16,8 @@ def initialise_results(results, bed_df, features, lengths_dict):
             results[read_id]["pLAM_contains_polyA"] = False
             results[read_id]["pLAM_polyA_coords"] = None
             results[read_id]["pLAM_polyA_signal"] = None
+            results[read_id]["SSLP_coords"] = None
+            results[read_id]["SSLP_length"] = None
             results[read_id]["ReadLength"] = lengths_dict.get(read_id, "NA")
             results[read_id]["4qA_marker_percent_identity"] = None
             results[read_id]["4qB_marker_percent_identity"] = None
@@ -281,7 +283,7 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
     # Set MultiIndex on ReadID and strand for uniqueness
     results_df.set_index(["ReadID", "strand"], inplace=True)
 
-    for index, row in psl_df.iterrows():
+    for _, row in psl_df.iterrows():
         read_name = row["t_name"]  # Target is the read
         feature_name = row["q_name"]  # Query is the feature
 
@@ -297,7 +299,6 @@ def populate_features(psl_df, results_df, features, fasta_file, sequences_dict, 
 
         # Ensure the read-strand combination exists in results_df
         if (read_name, strand) not in results_df.index:
-            print(f"NOT IN index {read_name} - {feature_name}")
             continue
 
         # Update ReadLength if not set
@@ -509,10 +510,7 @@ def read_classification(psl_file, output_table, bed_file, sslp_file, bam_file, f
         # Include PercentIdentity for specific features
         if feature in ["4qA_marker", "4qB_marker"]:
             columns.append(f"{feature}_percent_identity")
-    columns.extend(["pLAM_contains_polyA", "pLAM_polyA_coords", "pLAM_polyA_signal"])
-
-    if sslp_data:
-        columns.extend(["SSLP_coords", "SSLP_length"])
+    columns.extend(["pLAM_contains_polyA", "pLAM_polyA_coords", "pLAM_polyA_signal", "SSLP_coords", "SSLP_length"])
 
     columns.extend(["MappedEstimatedCopies", "MappedEstimatedCopiesPlus", "MappedEstimatedCopiesMinus"])
     # print(results_df)
