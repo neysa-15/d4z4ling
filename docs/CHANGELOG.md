@@ -9,6 +9,7 @@
 
 ### Changed
 - Moved user installed inputs (e.g. reference) to a separate directory
+- Meryl setup no longer in `d4z4ling.sh` but in `genome/meryl.sh` for multiple runs purpose
 - Adjusted default variable based on genome file moves in `d4z4ling.sh`
 - Set tools used in script as variable
 - Adjusted SSLP column to exist by default
